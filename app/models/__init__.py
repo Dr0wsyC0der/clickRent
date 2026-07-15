@@ -1,0 +1,1 @@
+from .association_tables import property_amenities
