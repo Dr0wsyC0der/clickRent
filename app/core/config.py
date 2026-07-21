@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     environment: Literal["development", "production", "testing"] = "development"
     database_url: str
     secret_key: str 
+    algorithm: str
+    refresh_token_expire_days: int
+    access_token_expire_minutes: int
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
