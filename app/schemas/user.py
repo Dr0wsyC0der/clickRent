@@ -6,7 +6,7 @@ from typing import Optional
 
 class UserCreate(BaseModel):
     username: str = Field(..., description="Имя пользователя", max_length=50)
-    email: EmailStr = Field(..., description="Email пользователя", max_length=100)
+    email: EmailStr = Field(..., description="Email пользователя")
     password: str = Field(..., description="Пароль пользователя", min_length=8)
     first_name: Optional[str] = Field(None, description="Имя пользователя", max_length=50)
     last_name: Optional[str] = Field(None, description="Фамилия пользователя", max_length=50)
