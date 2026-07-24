@@ -17,7 +17,6 @@ class PropertyCreate(BaseModel):
     price_per_night: float = Field(..., description="Цена объекта недвижимости за ночь")
     owner_id: int = Field(..., description="ID владельца объекта недвижимости")
 
-    model_config = ConfigDict(from_attributes=True)
 
 class PropertyUpdate(BaseModel):
     title: Optional[str] = Field(None, description="Название объекта недвижимости", max_length=100)
@@ -31,7 +30,6 @@ class PropertyUpdate(BaseModel):
     address: Optional[str] = Field(None, description="Адрес объекта недвижимости", max_length=100)
     price_per_night: Optional[float] = Field(None, description="Цена объекта недвижимости за ночь")
 
-    model_config = ConfigDict(from_attributes=True)
 
 class PropertyResponse(BaseModel):
     id: int = Field(..., description="Уникальный идентификатор объекта недвижимости")

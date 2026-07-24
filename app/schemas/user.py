@@ -12,7 +12,6 @@ class UserCreate(BaseModel):
     last_name: Optional[str] = Field(None, description="Фамилия пользователя", max_length=50)
     phone_number: Optional[str] = Field(None, description="Номер телефона пользователя", max_length=20)
 
-    model_config = ConfigDict(from_attributes=True)
 
 class UserResponse(BaseModel):
     id: int = Field(..., description="Уникальный идентификатор пользователя")
@@ -37,7 +36,6 @@ class UserUpdate(BaseModel):
     is_verified: Optional[bool] = Field(None, description="Состояние верификации пользователя")
     role: Optional[str] = Field(None, description="Роль пользователя")
 
-    model_config = ConfigDict(from_attributes=True)
 
 class UserLogin(BaseModel):
     email: EmailStr = Field(..., description="Email пользователя", max_length=100)

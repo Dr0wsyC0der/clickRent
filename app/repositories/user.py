@@ -17,7 +17,7 @@ class UserRepository(BaseRepository):
         return result.first()
     
     async def get_by_phone(self, phone: str) -> UserModel | None:
-        result = await self.session.scalars(select(UserModel).where(UserModel.username == phone))
+        result = await self.session.scalars(select(UserModel).where(UserModel.phone_number == phone))
         return result.first()
     
     async def create(self, user: UserModel) -> UserModel:
