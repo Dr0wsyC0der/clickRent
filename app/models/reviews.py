@@ -23,4 +23,4 @@ class Review(Base, TimestampMixin, IDMixin):
 
     property: Mapped["Property"] = relationship("Property", back_populates="reviews")
     author: Mapped["User"] = relationship("User", back_populates="reviews")
-    booking: Mapped["Booking"] = relationship("Booking", back_populates="reviews")
+    booking: Mapped["Booking"] = relationship("Booking", back_populates="review")

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import logging
-from app.api.v1.routes.auth import router as auth_router
+from app.api.v1.routes.auth.auth import router as auth_router
 from app.api.handlers.register import register_exception_handlers
 
 
@@ -39,3 +39,7 @@ async def health():
         "status": "ok",
         "service": "ClickRent API",
     }
+
+
+if __name__ == "__main__":
+    main()

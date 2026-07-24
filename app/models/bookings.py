@@ -17,8 +17,8 @@ class Booking(Base, TimestampMixin, IDMixin):
 
     property_id: Mapped[int] = mapped_column(ForeignKey("properties.id", ondelete="CASCADE"), index=True)
     guest_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    check_in: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    check_out: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    check_in: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    check_out: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     total_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     status: Mapped[BookingStatus] = mapped_column(Enum(BookingStatus), nullable=False)
 
