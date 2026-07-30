@@ -1,5 +1,6 @@
 import re
 import uuid
+from fastapi.security import OAuth2PasswordRequestForm
 from datetime import datetime, timezone
 from app.repositories.user import UserRepository 
 from app.repositories.refresh_token import RefreshTokenRepository
@@ -45,8 +46,9 @@ class AuthService:
 
         return new_user
 
-    async def login(self, data: LoginRequest) -> TokenResponse:
-        user = await self._find_user(data.login)
+
+    async def login(self,data: OAuth2PasswordRequestForm,) -> TokenResponse:
+        user = await self._find_user(data.username)
         if not user:
             raise InvalidCredentialsException()
         
