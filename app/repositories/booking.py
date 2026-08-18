@@ -15,11 +15,11 @@ class BookingRepository(BaseRepository):
         result = await self.session.scalars(select(BookingModel).where(BookingModel.guest_id == user_id))
         return result.all()
 
-    async def get_property_bookings(self, property_id) -> List[BookingModel]:
+    async def get_property_bookings(self, property_id: int) -> List[BookingModel]:
         result = await self.session.scalars(select(BookingModel).where(BookingModel.property_id == property_id))
         return result.all()
     
-    async def has_intersection(self, property_id, check_in: date, check_out: date) -> bool:
+    async def has_intersection(self, property_id: int, check_in: date, check_out: date) -> bool:
         result = await self.session.scalars(
             select(BookingModel).where(
                 and_(

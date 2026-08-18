@@ -18,6 +18,18 @@ from app.exceptions.auth import (
     RefreshTokenRevokedException,
 )
 
+from app.api.handlers.booking import (
+    property_not_found_handler,
+    booking_conflict_handler,
+    invalid_booking_dates_handler,
+)
+
+from app.exceptions.booking import (
+    PropertyNotFoundException,
+    BookingConflictException,
+    InvalidBookingDatesException,
+)
+
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
@@ -48,4 +60,19 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         RefreshTokenRevokedException,
         refresh_token_revoked_handler,
+    )
+
+    app.add_exception_handler(
+        BookingConflictException,
+        booking_conflict_handler,
+    )
+
+    app.add_exception_handler(
+        InvalidBookingDatesException,
+        invalid_booking_dates_handler,
+    )
+
+    app.add_exception_handler(
+        PropertyNotFoundException,
+        property_not_found_handler,
     )
