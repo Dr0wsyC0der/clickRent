@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import Optional
+from app.db.enums import UserRole
 
 
 
@@ -17,7 +18,7 @@ class UserResponse(BaseModel):
     id: int = Field(..., description="Уникальный идентификатор пользователя")
     username: str = Field(..., description="Имя пользователя", max_length=50)
     email: EmailStr = Field(..., description="Email пользователя", max_length=100)
-    role: str = Field(..., description="Роль пользователя")
+    role: UserRole = Field(..., description="Роль пользователя")
     is_active: bool = Field(..., description="Состояние активности пользователя")
     is_verified: bool = Field(..., description="Состояние верификации пользователя")
     created_at: datetime = Field(..., description="Дата регистрации пользователя")

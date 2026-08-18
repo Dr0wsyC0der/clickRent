@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import jwt
 from app.core.config import settings
-from app.exceptions.auth import InvalidRefreshTokenException
+from app.exceptions.auth import InvalidCredentialsException
 from typing import Any
 
 
@@ -44,4 +44,4 @@ def decode_token(token: str) -> dict[str, Any]:
             algorithms=[settings.algorithm],
         )
     except jwt.InvalidTokenError as exc:
-        raise InvalidRefreshTokenException() from exc
+        raise InvalidCredentialsException() from exc
