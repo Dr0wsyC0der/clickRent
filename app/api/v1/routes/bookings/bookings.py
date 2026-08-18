@@ -3,7 +3,7 @@ from app.models.users import User
 from app.services.booking import BookingService
 from app.schemas.booking import CreateBooking, BookingResponse
 from app.api.dependencies.booking import get_booking_service
-from app.api.dependencies.repositories import get_user_repository
+from app.api.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 @router.post("/", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
 async def create_booking(
     booking_data: CreateBooking,
-    current_user: User = Depends(get_user_repository),
+    current_user: User = Depends(get_current_user),
     booking_service: BookingService = Depends(get_booking_service)
 ):
     new_booking = await booking_service.create_booking(

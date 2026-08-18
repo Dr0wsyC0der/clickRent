@@ -1,8 +1,9 @@
 from sqlalchemy import select, and_
-from datetime import date
+from datetime import datetime
 from app.models.bookings import Booking as BookingModel
 from typing import List
 from app.repositories.base import BaseRepository
+from app.db.enums import BookingStatus
 
 class BookingRepository(BaseRepository):
     async def create(self, booking: BookingModel) -> BookingModel:
@@ -19,15 +20,18 @@ class BookingRepository(BaseRepository):
         result = await self.session.scalars(select(BookingModel).where(BookingModel.property_id == property_id))
         return result.all()
     
-    async def has_intersection(self, property_id: int, check_in: date, check_out: date) -> bool:
+    async def has_intersection(self, property_id: int, check_in: datetime, check_out: datetime) -> bool:
         result = await self.session.scalars(
             select(BookingModel).where(
                 and_(
                     BookingModel.property_id == property_id,
                     BookingModel.check_in < check_out,
                     BookingModel.check_out > check_in,
-                    BookingModel.status.in_(["pending", "confirmed"]),
-                    )
+                    BookingModel.status.in_([
+                        BookingStatus.PENDING,
+                        BookingStatus.CONFIRMED,
+                    ])
                 )
             )
+        )
         return result.first() is not None
