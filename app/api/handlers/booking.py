@@ -5,6 +5,8 @@ from app.exceptions.booking import (
     PropertyNotFoundException,
     BookingConflictException,
     InvalidBookingDatesException,
+    BookingNotFoundException,
+    BookingAccessDeniedException,
 )
 
 async def property_not_found_handler(request: Request, exc: PropertyNotFoundException):
@@ -23,4 +25,16 @@ async def invalid_booking_dates_handler(request: Request, exc: InvalidBookingDat
     return JSONResponse(
         status_code=400,
         content={"detail": "Неверные даты бронирования"},
+    )
+
+async def booking_not_found_handler(request: Request, exc: BookingNotFoundException):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Бронирование с указанным идентификатором не найдено"},
+    )
+
+async def booking_access_denied_handler(request: Request, exc: BookingAccessDeniedException):
+    return JSONResponse(
+        status_code=403,
+        content={"detail": "У вас нет доступа к этому бронированию"},
     )

@@ -10,3 +10,8 @@ class InvalidBookingDatesException(BookingError):
 class BookingConflictException(BookingError):
     pass
 
+class BookingNotFoundException(BookingError):
+    pass
+
+class BookingAccessDeniedException(BookingError):
+    pass

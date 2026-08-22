@@ -35,3 +35,7 @@ class BookingRepository(BaseRepository):
             )
         )
         return result.first() is not None
+
+    async def get_booking_by_id(self, booking_id: int) -> BookingModel|None:
+        result = await self.session.scalars(select(BookingModel).where(BookingModel.id == booking_id))
+        return result.first()

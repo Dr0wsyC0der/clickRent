@@ -22,12 +22,16 @@ from app.api.handlers.booking import (
     property_not_found_handler,
     booking_conflict_handler,
     invalid_booking_dates_handler,
+    booking_not_found_handler,
+    booking_access_denied_handler
 )
 
 from app.exceptions.booking import (
     PropertyNotFoundException,
     BookingConflictException,
     InvalidBookingDatesException,
+    BookingNotFoundException,
+    BookingAccessDeniedException,
 )
 
 
@@ -75,4 +79,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         PropertyNotFoundException,
         property_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        BookingNotFoundException,
+        booking_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        BookingAccessDeniedException,
+        booking_access_denied_handler,
     )

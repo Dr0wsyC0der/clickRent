@@ -28,3 +28,11 @@ async def get_user_bookings(
     booking_service: BookingService = Depends(get_booking_service)
 ):
     return await booking_service.get_user_bookings(current_user.id)
+
+@router.get("/{booking_id}", response_model=BookingResponse, status_code=status.HTTP_200_OK)
+async def get_booking_by_id(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    booking_service: BookingService = Depends(get_booking_service)
+):
+    return await booking_service.get_booking_by_id(booking_id, current_user.id)
