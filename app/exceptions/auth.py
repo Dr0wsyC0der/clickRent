@@ -18,3 +18,6 @@ class RefreshTokenExpiredException(AuthError):
 
 class InvalidRefreshTokenException(AuthError):
     pass
+
+class AdminAccessDeniedException(AuthError):
+    pass

@@ -4,7 +4,8 @@ from app.services.auth import AuthService
 from app.security.jwt import decode_token
 from app.api.dependencies.repositories import get_refresh_token_repository, get_user_repository
 from app.api.dependencies.db import get_session
-from app.exceptions.auth import InvalidCredentialsException
+from app.exceptions.auth import InvalidCredentialsException, AdminAccessDeniedException
+from app.db.enums import UserRole
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
@@ -37,3 +38,7 @@ async def get_current_user(
         raise InvalidCredentialsException()
 
     return user
+
+async def check_admin(current_user = Depends(get_current_user)) -> None:
+    if current_user.role != UserRole.ADMIN:
+        raise AdminAccessDeniedException()

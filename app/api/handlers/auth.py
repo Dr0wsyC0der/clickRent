@@ -8,6 +8,7 @@ from app.exceptions.auth import (
     InvalidRefreshTokenException,
     RefreshTokenExpiredException,
     RefreshTokenRevokedException,
+    AdminAccessDeniedException,
 )
 
 
@@ -50,4 +51,10 @@ async def refresh_token_revoked_handler(request: Request, exc: RefreshTokenRevok
     return JSONResponse(
         status_code=401,
         content={"detail": "Refresh token revoked"},
+    )
+
+async def admin_access_denied_handler(request: Request, exc: AdminAccessDeniedException):
+    return JSONResponse(
+        status_code=403,
+        content={"detail": "Admin access denied"},
     )

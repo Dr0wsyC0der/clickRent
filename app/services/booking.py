@@ -51,3 +51,6 @@ class BookingService:
         if booking.guest_id != user_id:
             raise BookingAccessDeniedException("У вас нет доступа к этому бронированию.")
         return booking
+
+    async def get_all_bookings(self) -> List[BookingModel]:
+        return await self.booking_repository.get_all_bookings()

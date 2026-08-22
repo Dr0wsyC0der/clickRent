@@ -3,7 +3,7 @@ from app.models.users import User
 from app.services.booking import BookingService
 from app.schemas.booking import CreateBooking, BookingResponse
 from app.api.dependencies.booking import get_booking_service
-from app.api.dependencies.auth import get_current_user
+from app.api.dependencies.auth import get_current_user, check_admin
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -44,3 +44,9 @@ async def cancel_booking(
     booking_service: BookingService = Depends(get_booking_service)
 ):
     await booking_service.cancel_booking(booking_id, current_user.id)
+
+@router.get("/", response_model=list[BookingResponse], dependencies=[Depends(check_admin)], status_code=status.HTTP_200_OK)
+async def get_all_bookings(
+    booking_service: BookingService = Depends(get_booking_service)
+):
+    return await booking_service.get_all_bookings()
