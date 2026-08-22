@@ -23,7 +23,9 @@ from app.api.handlers.booking import (
     booking_conflict_handler,
     invalid_booking_dates_handler,
     booking_not_found_handler,
-    booking_access_denied_handler
+    booking_access_denied_handler,
+    booking_status_exception_handler,
+
 )
 
 from app.exceptions.booking import (
@@ -32,6 +34,7 @@ from app.exceptions.booking import (
     InvalidBookingDatesException,
     BookingNotFoundException,
     BookingAccessDeniedException,
+    BookingStatusException,
 )
 
 
@@ -89,4 +92,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         BookingAccessDeniedException,
         booking_access_denied_handler,
+    )
+
+    app.add_exception_handler(
+        BookingStatusException,
+        booking_status_exception_handler,
     )

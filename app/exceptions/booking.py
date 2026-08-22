@@ -15,3 +15,6 @@ class BookingNotFoundException(BookingError):
 
 class BookingAccessDeniedException(BookingError):
     pass
+
+class BookingStatusException(BookingError):
+    pass

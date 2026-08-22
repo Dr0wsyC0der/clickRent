@@ -1,4 +1,4 @@
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, update
 from datetime import datetime
 from app.models.bookings import Booking as BookingModel
 from typing import List
@@ -11,6 +11,11 @@ class BookingRepository(BaseRepository):
         await self.session.commit()
         await self.session.refresh(booking)
         return booking
+
+    async def cancel_booking(self, booking_id: int) -> None:
+        stmt = update(BookingModel).where(BookingModel.id == booking_id).values(status=BookingStatus.CANCELLED)
+        await self.session.execute(stmt)
+        await self.session.commit()
 
     async def get_user_bookings(self, user_id: int) -> List[BookingModel]:
         result = await self.session.scalars(select(BookingModel).where(BookingModel.guest_id == user_id))
@@ -39,3 +44,5 @@ class BookingRepository(BaseRepository):
     async def get_booking_by_id(self, booking_id: int) -> BookingModel|None:
         result = await self.session.scalars(select(BookingModel).where(BookingModel.id == booking_id))
         return result.first()
+
+    
