@@ -4,6 +4,7 @@ from app.models.bookings import Booking as BookingModel
 from app.db.enums import BookingStatus
 from app.exceptions.booking import PropertyNotFoundException, BookingConflictException, InvalidBookingDatesException
 from datetime import datetime
+from typing import List
 class BookingService:
     def __init__(self, booking_repository: BookingRepository, property_repository: PropertyRepository):
         self.booking_repository = booking_repository
@@ -29,3 +30,6 @@ class BookingService:
         )
 
         return await self.booking_repository.create(new_booking)
+
+    async def get_user_bookings(self, user_id: int) -> List[BookingModel]:
+        return await self.booking_repository.get_user_bookings(user_id)

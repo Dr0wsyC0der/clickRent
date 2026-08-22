@@ -21,3 +21,10 @@ async def create_booking(
         check_out=booking_data.check_out
     )
     return new_booking
+
+@router.get("/my", response_model=list[BookingResponse], status_code=status.HTTP_200_OK)
+async def get_user_bookings(
+    current_user: User = Depends(get_current_user),
+    booking_service: BookingService = Depends(get_booking_service)
+):
+    return await booking_service.get_user_bookings(current_user.id)
