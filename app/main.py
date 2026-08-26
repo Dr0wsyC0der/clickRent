@@ -4,6 +4,7 @@ import logging
 from app.api.v1.routes.users.users import router as users_router
 from app.api.v1.routes.auth.auth import router as auth_router
 from app.api.v1.routes.bookings.bookings import router as booking_router
+from app.api.v1.routes.properties.properties import router as property_router
 from app.api.handlers.register import register_exception_handlers
 
 
@@ -29,6 +30,7 @@ app = FastAPI(
 )
 
 register_exception_handlers(app)
+app.include_router(property_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(booking_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")

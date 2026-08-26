@@ -21,3 +21,6 @@ class InvalidRefreshTokenException(AuthError):
 
 class AdminAccessDeniedException(AuthError):
     pass
+
+class AccessDeniedException(AuthError):
+    pass

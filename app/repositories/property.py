@@ -24,7 +24,22 @@ class PropertyRepository(BaseRepository):
         await self.session.refresh(property)
         return property
 
-    async def delete(self, property: PropertyModel) -> PropertyModel | None:
+    async def delete(self, property: PropertyModel) -> None:
         await self.session.delete(property)
         await self.session.commit()
 
+    async def get_by_owner_and_address(self, owner_id: int, city: str, address: str) -> PropertyModel | None:
+        result = await self.session.scalars(
+            select(PropertyModel).where(
+                PropertyModel.owner_id == owner_id,
+                PropertyModel.city == city,
+                PropertyModel.address == address
+            )
+        )
+        return result.first()
+
+    async def get_host_properties(self, owner_id: int) -> List[PropertyModel]:
+        result = await self.session.scalars(
+            select(PropertyModel).where(PropertyModel.owner_id == owner_id)
+        )
+        return result.all()

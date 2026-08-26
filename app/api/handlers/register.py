@@ -39,6 +39,17 @@ from app.exceptions.booking import (
     BookingStatusException,
 )
 
+from app.api.handlers.property import (
+    property_already_exists_handler,
+    property_not_found_handler,
+    property_access_denied_handler,
+)
+
+from app.exceptions.property import (
+    PropertyAlreadyExistsException,
+    PropertyNotFoundException,
+    PropertyAccessDeniedException,
+)
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
@@ -105,3 +116,19 @@ def register_exception_handlers(app: FastAPI) -> None:
         BookingStatusException,
         booking_status_exception_handler,
     )
+
+    app.add_exception_handler(
+        PropertyAlreadyExistsException,
+        property_already_exists_handler,
+    )
+
+    app.add_exception_handler(
+        PropertyNotFoundException,
+        property_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        PropertyAccessDeniedException,
+        property_access_denied_handler,
+    )
+    
