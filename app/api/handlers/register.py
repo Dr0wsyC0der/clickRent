@@ -51,6 +51,19 @@ from app.exceptions.property import (
     PropertyAccessDeniedException,
 )
 
+from app.api.handlers.review import (
+    review_not_found_handler,
+    review_access_denied_handler,
+    review_already_exists_handler,
+)
+
+from app.exceptions.review import (
+    ReviewNotFoundException,
+    ReviewAccessDeniedException,
+    ReviewAlreadyExistsException,
+)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         EmailAlreadyExistsException,
@@ -130,5 +143,20 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         PropertyAccessDeniedException,
         property_access_denied_handler,
+    )
+
+    app.add_exception_handler(
+        ReviewAccessDeniedException,
+        review_access_denied_handler,
+    )
+
+    app.add_exception_handler(
+        ReviewAlreadyExistsException,
+        review_already_exists_handler,
+    )
+
+    app.add_exception_handler(
+        ReviewNotFoundException,
+        review_not_found_handler,
     )
     
