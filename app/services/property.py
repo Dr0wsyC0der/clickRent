@@ -1,11 +1,13 @@
 from app.repositories.property import PropertyRepository
-from app.schemas.property import PropertyCreate, PropertyUpdate
+from app.repositories.booking import BookingRepository
+from app.schemas.property import PropertyCreate, PropertyUpdate, PropertySearchParams
 from app.models.properties import Property as PropertyModel
 from app.exceptions.property import PropertyAlreadyExistsException, PropertyNotFoundException, PropertyAccessDeniedException
 
 class PropertyService:
-    def __init__(self, property_repository: PropertyRepository):
+    def __init__(self, property_repository: PropertyRepository, booking_repository: BookingRepository):
         self.property_repository = property_repository
+        self.booking_repository = booking_repository
 
     async def create_property(self, user_id: int, property_data: PropertyCreate) -> PropertyModel:
         existing_property = await self.property_repository.get_by_owner_and_address(
@@ -51,4 +53,18 @@ class PropertyService:
         if property.owner_id != owner_id:
             raise PropertyAccessDeniedException("У вас нет прав для управления этой недвижимостью.")
         await self.property_repository.delete(property)
-    
+
+    async def search_properties(self, filters: PropertySearchParams) -> list[PropertyModel]:
+        properties = await self.property_repository.search_properties(filters)
+        if filters.check_in and filters.check_out:
+            available_properties = []
+            for property in properties:
+                has_overlap = await self.booking_repository.has_intersection(
+                    property_id=property.id,
+                    check_in=filters.check_in,
+                    check_out=filters.check_out
+                )
+                if not has_overlap:
+                    available_properties.append(property)
+            return available_properties
+        return properties

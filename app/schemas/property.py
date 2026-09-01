@@ -67,3 +67,16 @@ class PropertyShortResponse(BaseModel):
     review_count: int = Field(..., description="Количество отзывов объекта недвижимости")
 
     model_config = ConfigDict(from_attributes=True)
+
+class PropertySearchParams(BaseModel):
+    city: str | None = Field(None, description="Город объекта недвижимости", max_length=50)
+    country: str | None = Field(None, description="Страна объекта недвижимости", max_length=50)
+    min_price: float | None = Field(None, gt=0, description="Минимальная цена объекта недвижимости за ночь")
+    max_price: float | None = Field(None, gt=0, description="Максимальная цена объекта недвижимости за ночь")
+    guest_capacity: int | None = Field(None, gt=0, description="Вместимость объекта недвижимости")
+    rooms: int | None = Field(None, gt=0, description="Количество комнат в объекте недвижимости")
+    beds: int | None = Field(None, gt=0, description="Количество кроватей в объекте недвижимости")
+    bathrooms: int | None = Field(None, gt=0, description="Количество ванных комнат в объекте недвижимости")
+    rating: float | None = Field(None, ge=0, le=5, description="Рейтинг объекта недвижимости")
+    check_in: datetime| None = Field(None, description="Дата заезда в формате YYYY-MM-DD")
+    check_out: datetime | None = Field(None, description="Дата выезда в формате YYYY-MM-DD")

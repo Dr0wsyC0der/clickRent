@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from app.models.users import User
-from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate
+from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertySearchParams, PropertyShortResponse
 from app.services.property import PropertyService
 from app.api.dependencies.property import get_property_service
 from app.api.dependencies.auth import get_current_user, check_host
@@ -19,6 +19,13 @@ async def create_property(
         property_data=property_data
     )
     return new_property
+
+@router.get("/search", response_model=list[PropertyShortResponse], status_code=status.HTTP_200_OK)
+async def search_properties(
+    search_params: PropertySearchParams = Depends(),
+    property_service: PropertyService = Depends(get_property_service)
+):
+    return await property_service.search_properties(search_params)
 
 @router.patch("/{property_id}", response_model=PropertyResponse, dependencies=[Depends(check_host)], status_code=status.HTTP_200_OK)
 async def update_property(
@@ -68,6 +75,7 @@ async def get_property_by_id(
 ):
     property = await property_service.get_property_by_id(property_id)
     return property
+
 
 
 
