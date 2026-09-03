@@ -68,7 +68,11 @@ class PropertyShortResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class PropertySearchParams(BaseModel):
+class PropertyListParams(BaseModel):
+    page: int = Field(1, ge=1, description="Номер страницы")
+    size: int = Field(10, ge=1, le=100, description="Количество объектов недвижимости на странице")
+
+class PropertySearchParams(PropertyListParams):
     city: str | None = Field(None, description="Город объекта недвижимости", max_length=50)
     country: str | None = Field(None, description="Страна объекта недвижимости", max_length=50)
     min_price: float | None = Field(None, gt=0, description="Минимальная цена объекта недвижимости за ночь")
@@ -80,3 +84,10 @@ class PropertySearchParams(BaseModel):
     rating: float | None = Field(None, ge=0, le=5, description="Рейтинг объекта недвижимости")
     check_in: datetime| None = Field(None, description="Дата заезда в формате YYYY-MM-DD")
     check_out: datetime | None = Field(None, description="Дата выезда в формате YYYY-MM-DD")
+
+class PropertySearchResponse(BaseModel):
+    properties: list[PropertyShortResponse] = Field(..., description="Список объектов недвижимости")
+    total: int = Field(..., description="Общее количество найденных объектов недвижимости")
+    page: int = Field(..., description="Номер текущей страницы")
+    size: int = Field(..., description="Количество объектов недвижимости на странице")
+    pages: int = Field(..., description="Общее количество страниц")

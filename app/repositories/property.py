@@ -1,8 +1,9 @@
-from sqlalchemy import select, and_
+from sqlalchemy import select, func, exists, and_
 from app.models.properties import Property as PropertyModel
-from typing import List
 from app.repositories.base import BaseRepository
-from app.schemas.property import PropertySearchParams
+from app.schemas.property import PropertySearchParams, PropertyListParams
+from app.models.bookings import Booking as BookingModel
+from app.db.enums import BookingStatus
 
 
 class PropertyRepository(BaseRepository):
@@ -10,9 +11,17 @@ class PropertyRepository(BaseRepository):
         result = await self.session.scalars(select(PropertyModel).where(PropertyModel.id == property_id))
         return result.first()
 
-    async def get_all(self) -> List[PropertyModel]:
-        result = await self.session.scalars(select(PropertyModel))
-        return result.all()
+    async def get_all(self, filters: PropertyListParams) -> tuple[list[PropertyModel], int]:
+        count_query = select(func.count()).select_from(PropertyModel)
+        total = await self.session.scalar(count_query)
+
+        result = await self.session.scalars(
+            select(PropertyModel)
+            .offset((filters.page - 1) * filters.size)
+            .limit(filters.size)
+        )
+
+        return result.all(), total
 
     async def create(self, property: PropertyModel) -> PropertyModel | None:
         self.session.add(property)
@@ -39,14 +48,13 @@ class PropertyRepository(BaseRepository):
         )
         return result.first()
 
-    async def get_host_properties(self, owner_id: int) -> List[PropertyModel]:
+    async def get_host_properties(self, owner_id: int) -> list[PropertyModel]:
         result = await self.session.scalars(
             select(PropertyModel).where(PropertyModel.owner_id == owner_id)
         )
         return result.all()
 
-    async def search_properties(self, filters: PropertySearchParams) -> List[PropertyModel]:
-
+    async def search_properties(self, filters: PropertySearchParams) -> tuple[list[PropertyModel], int]:
         conditions = []
 
         if filters.city is not None:
@@ -82,9 +90,29 @@ class PropertyRepository(BaseRepository):
         if filters.rating is not None:
             conditions.append(PropertyModel.rating >= filters.rating)
 
+        if filters.check_in and filters.check_out:
+            booking_exists = exists().where(
+                and_(
+                    BookingModel.property_id == PropertyModel.id,
+                    BookingModel.check_in < filters.check_out,
+                    BookingModel.check_out > filters.check_in,
+                    BookingModel.status.in_([
+                        BookingStatus.PENDING,
+                        BookingStatus.CONFIRMED,
+                    ])
+                )
+            )
+
+            conditions.append(~booking_exists)
+
+        count_query = select(func.count()).select_from(PropertyModel).where(*conditions)
+        total = await self.session.scalar(count_query)
+        
         result = await self.session.scalars(
-            select(PropertyModel).where(*conditions)
+            select(PropertyModel).where(*conditions).offset((filters.page - 1) * filters.size).limit(filters.size)
         )
 
-        return result.all()
+        properties = result.all()
+
+        return properties, total
         

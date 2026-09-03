@@ -1,6 +1,6 @@
 from app.repositories.property import PropertyRepository
 from app.repositories.booking import BookingRepository
-from app.schemas.property import PropertyCreate, PropertyUpdate, PropertySearchParams
+from app.schemas.property import PropertyCreate, PropertyUpdate, PropertySearchParams, PropertyListParams
 from app.models.properties import Property as PropertyModel
 from app.exceptions.property import PropertyAlreadyExistsException, PropertyNotFoundException, PropertyAccessDeniedException
 
@@ -24,8 +24,8 @@ class PropertyService:
         )
         return await self.property_repository.create(new_property)
 
-    async def get_all_properties(self) -> list[PropertyModel]:
-        return await self.property_repository.get_all()
+    async def get_all_properties(self, filters: PropertyListParams) -> tuple[list[PropertyModel], int]:
+        return await self.property_repository.get_all(filters)
 
     async def get_property_by_id(self, property_id: int) -> PropertyModel | None:
         property = await self.property_repository.get_by_id(property_id)
@@ -54,17 +54,6 @@ class PropertyService:
             raise PropertyAccessDeniedException("У вас нет прав для управления этой недвижимостью.")
         await self.property_repository.delete(property)
 
-    async def search_properties(self, filters: PropertySearchParams) -> list[PropertyModel]:
-        properties = await self.property_repository.search_properties(filters)
-        if filters.check_in and filters.check_out:
-            available_properties = []
-            for property in properties:
-                has_overlap = await self.booking_repository.has_intersection(
-                    property_id=property.id,
-                    check_in=filters.check_in,
-                    check_out=filters.check_out
-                )
-                if not has_overlap:
-                    available_properties.append(property)
-            return available_properties
-        return properties
+    async def search_properties(self, filters: PropertySearchParams) -> tuple[list[PropertyModel], int]:
+        properties, total = await self.property_repository.search_properties(filters)
+        return properties, total

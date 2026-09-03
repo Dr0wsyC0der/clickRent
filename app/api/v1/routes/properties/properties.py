@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from app.models.users import User
-from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertySearchParams, PropertyShortResponse
+from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertySearchParams, PropertySearchResponse, PropertyListParams
 from app.services.property import PropertyService
 from app.api.dependencies.property import get_property_service
 from app.api.dependencies.auth import get_current_user, check_host
@@ -20,12 +20,20 @@ async def create_property(
     )
     return new_property
 
-@router.get("/search", response_model=list[PropertyShortResponse], status_code=status.HTTP_200_OK)
+@router.get("/search", response_model=PropertySearchResponse, status_code=status.HTTP_200_OK)
 async def search_properties(
     search_params: PropertySearchParams = Depends(),
     property_service: PropertyService = Depends(get_property_service)
 ):
-    return await property_service.search_properties(search_params)
+    properties, total = await property_service.search_properties(search_params)
+    pages = (total + search_params.size - 1) // search_params.size
+    return PropertySearchResponse(
+        properties=properties,
+        total=total,
+        page=search_params.page,
+        size=search_params.size,
+        pages=pages
+    )
 
 @router.patch("/{property_id}", response_model=PropertyResponse, dependencies=[Depends(check_host)], status_code=status.HTTP_200_OK)
 async def update_property(
@@ -60,13 +68,21 @@ async def get_my_properties(
     properties = await property_service.get_host_properties(current_user.id)
     return properties
 
-@router.get("/", response_model=list[PropertyResponse], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=PropertySearchResponse, status_code=status.HTTP_200_OK)
 async def get_all_properties(
-    property_service: PropertyService = Depends(get_property_service)
+    property_service: PropertyService = Depends(get_property_service),
+    params: PropertyListParams = Depends()
 ):
     #ПОТОМ БУДЕТ ПАГИНАЦИЯ
-    properties = await property_service.get_all_properties()
-    return properties
+    properties, total = await property_service.get_all_properties(params)
+    pages = (total + params.size - 1) // params.size
+    return PropertySearchResponse(
+        properties=properties,
+        total=total,
+        page=params.page,
+        size=params.size,
+        pages=pages
+    )
 
 @router.get("/{property_id}", response_model=PropertyResponse, status_code=status.HTTP_200_OK)
 async def get_property_by_id(
