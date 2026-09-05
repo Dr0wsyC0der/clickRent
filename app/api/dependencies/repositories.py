@@ -4,6 +4,7 @@ from app.repositories.user import UserRepository
 from app.repositories.booking import BookingRepository
 from app.repositories.property import PropertyRepository
 from app.repositories.review import ReviewRepository
+from app.repositories.favorite import FavoriteRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,3 +22,6 @@ async def get_refresh_token_repository(session: AsyncSession = Depends(get_sessi
 
 async def get_review_repository(session: AsyncSession = Depends(get_session)) -> ReviewRepository:
     return ReviewRepository(session=session)
+
+async def get_favorite_repository(session: AsyncSession = Depends(get_session)) -> FavoriteRepository:
+    return FavoriteRepository(session=session)

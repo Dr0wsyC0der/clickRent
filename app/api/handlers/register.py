@@ -63,6 +63,17 @@ from app.exceptions.review import (
     ReviewAlreadyExistsException,
 )
 
+from app.api.handlers.favorite import (
+    favorite_not_found_handler,
+    already_added_to_favorites_handler,
+)
+
+from app.exceptions.favorite import (
+    FavoriteNotFoundException,
+    AlreadyAddedToFavoritesException,
+)
+
+
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
@@ -159,4 +170,14 @@ def register_exception_handlers(app: FastAPI) -> None:
         ReviewNotFoundException,
         review_not_found_handler,
     )
-    
+
+
+    app.add_exception_handler(
+        AlreadyAddedToFavoritesException,
+        already_added_to_favorites_handler,
+    )
+
+    app.add_exception_handler(
+        FavoriteNotFoundException,
+        favorite_not_found_handler,
+    )

@@ -10,6 +10,6 @@ from .property_views import PropertyView
 from .chat_participants import ChatParticipant
 from .chats import Chat
 from .amenities import Amenity
-from .favorities import Favorite
+from .favorite import Favorite
 
 from .association_tables import property_amenities
