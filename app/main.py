@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 import logging
 from app.api.v1.routes.users.users import router as users_router
 from app.api.v1.routes.auth.auth import router as auth_router
@@ -7,6 +8,7 @@ from app.api.v1.routes.bookings.bookings import router as booking_router
 from app.api.v1.routes.properties.properties import router as property_router
 from app.api.v1.routes.reviews.review import router as review_router
 from app.api.v1.routes.favorities.favorite import router as favorite_router
+from app.api.v1.routes.property_images.property_images import router as property_images_router
 from app.api.handlers.register import register_exception_handlers
 
 
@@ -31,13 +33,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.mount("/media", StaticFiles(directory="media"), name="media")
+
 register_exception_handlers(app)
-app.include_router(favorite_router, prefix="/api/v1")
-app.include_router(review_router, prefix="/api/v1")
-app.include_router(property_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(booking_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
+app.include_router(property_router, prefix="/api/v1")
+app.include_router(review_router, prefix="/api/v1")
+app.include_router(property_images_router, prefix="/api/v1")
+app.include_router(favorite_router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -7,7 +7,8 @@ from app.api.handlers.auth import (
     invalid_refresh_token_handler,
     refresh_token_expired_handler,
     refresh_token_revoked_handler,
-    admin_access_denied_handler
+    admin_access_denied_handler,
+    access_denied_handler
 )
 
 from app.exceptions.auth import (
@@ -18,6 +19,7 @@ from app.exceptions.auth import (
     RefreshTokenExpiredException,
     RefreshTokenRevokedException,
     AdminAccessDeniedException,
+    AccessDeniedException,
 )
 
 from app.api.handlers.booking import (
@@ -73,6 +75,16 @@ from app.exceptions.favorite import (
     AlreadyAddedToFavoritesException,
 )
 
+from app.api.handlers.property_image import (
+    property_image_not_found_handler,
+    property_image_create_exception_handler,
+)
+
+from app.exceptions.property_image import (
+    PropertyImageNotFoundException,
+    PropertyImageCreateException,
+)
+
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -99,6 +111,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         AdminAccessDeniedException,
         admin_access_denied_handler,
+    )
+
+    app.add_exception_handler(
+        AccessDeniedException,
+        access_denied_handler,
     )
 
     app.add_exception_handler(
@@ -180,4 +197,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         FavoriteNotFoundException,
         favorite_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        PropertyImageNotFoundException,
+        property_image_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        PropertyImageCreateException,
+        property_image_create_exception_handler,
     )
