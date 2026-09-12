@@ -7,6 +7,7 @@ from app.repositories.review import ReviewRepository
 from app.repositories.favorite import FavoriteRepository
 from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.property_image import PropertyImageRepository
+from app.repositories.amenity import AmenityRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 async def get_user_repository(session: AsyncSession = Depends(get_session)) -> UserRepository:
@@ -29,3 +30,6 @@ async def get_favorite_repository(session: AsyncSession = Depends(get_session)) 
 
 async def get_property_image_repository(session: AsyncSession = Depends(get_session)) -> PropertyImageRepository:
     return PropertyImageRepository(session=session)
+
+async def get_amenity_repository(session: AsyncSession = Depends(get_session)) -> AmenityRepository:
+    return AmenityRepository(session=session)

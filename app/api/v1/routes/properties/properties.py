@@ -4,6 +4,7 @@ from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdat
 from app.services.property import PropertyService
 from app.api.dependencies.property import get_property_service
 from app.api.dependencies.auth import get_current_user, check_host
+from app.schemas.amenity import AmenityResponse
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
@@ -92,6 +93,37 @@ async def get_property_by_id(
     property = await property_service.get_property_by_id(property_id)
     return property
 
+@router.post("/{property_id}/amenities/{amenity_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def add_amenity_to_property(
+    property_id: int,
+    amenity_id: int,
+    current_user: User = Depends(get_current_user),
+    property_service: PropertyService = Depends(get_property_service),
+):
+    await property_service.add_amenity_to_property(
+        owner_id=current_user.id,
+        property_id=property_id,
+        amenity_id=amenity_id,
+    )
 
+@router.get("/{property_id}/amenities",response_model=list[AmenityResponse],status_code=status.HTTP_200_OK)
+async def get_property_amenities(
+    property_id: int,
+    property_service: PropertyService = Depends(get_property_service),
+):
+    return await property_service.get_property_amenities(property_id)
+
+@router.delete("/{property_id}/amenities/{amenity_id}",status_code=status.HTTP_204_NO_CONTENT)
+async def remove_amenity_from_property(
+    property_id: int,
+    amenity_id: int,
+    current_user: User = Depends(get_current_user),
+    property_service: PropertyService = Depends(get_property_service),
+):
+    await property_service.remove_amenity_from_property(
+        owner_id=current_user.id,
+        property_id=property_id,
+        amenity_id=amenity_id,
+    )
 
 

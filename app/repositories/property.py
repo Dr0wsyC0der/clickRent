@@ -1,8 +1,10 @@
-from sqlalchemy import select, func, exists, and_
+from sqlalchemy import select, func, exists, and_, insert, delete
 from app.models.properties import Property as PropertyModel
 from app.repositories.base import BaseRepository
 from app.schemas.property import PropertySearchParams, PropertyListParams
 from app.models.bookings import Booking as BookingModel
+from app.models.amenities import Amenity as AmenityModel
+from app.models.association_tables import property_amenities as PropertyAmenitiesModel
 from app.db.enums import BookingStatus
 
 
@@ -25,7 +27,7 @@ class PropertyRepository(BaseRepository):
 
     async def create(self, property: PropertyModel) -> PropertyModel | None:
         self.session.add(property)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(property)
         return property
 
@@ -115,4 +117,26 @@ class PropertyRepository(BaseRepository):
         properties = result.all()
 
         return properties, total
-        
+
+    async def get_property_amenities(self, property_id: int) -> list[AmenityModel]:
+        result =  await self.session.scalars(
+            select(AmenityModel).join(PropertyAmenitiesModel, AmenityModel.id == PropertyAmenitiesModel.c.amenity_id)
+            .where(PropertyAmenitiesModel.c.property_id == property_id))
+        return result.all()
+
+    async def add_amenity_to_property(self, property_id: int, amenity_id: int) -> None:
+        query = insert(PropertyAmenitiesModel).values(
+            property_id=property_id,
+            amenity_id=amenity_id,
+        )
+
+        await self.session.execute(query)
+
+
+    async def remove_amenity_from_property(self,property_id: int, amenity_id: int) -> None:
+        query = delete(PropertyAmenitiesModel).where(
+        PropertyAmenitiesModel.c.property_id == property_id,
+        PropertyAmenitiesModel.c.amenity_id == amenity_id,
+        )
+
+        await self.session.execute(query)  

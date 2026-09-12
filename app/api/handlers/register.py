@@ -85,6 +85,17 @@ from app.exceptions.property_image import (
     PropertyImageCreateException,
 )
 
+from app.api.handlers.amenity import (
+    amenity_not_found_handler,
+    amenity_already_added_handler,
+    amenity_not_added_handler,
+)
+
+from app.exceptions.amenity import (
+    AmenityNotFoundException,
+    AmenityAlreadyAddedException,
+    AmenityNotAddedException,
+)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -207,4 +218,19 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         PropertyImageCreateException,
         property_image_create_exception_handler,
+    )
+
+    app.add_exception_handler(
+        AmenityNotFoundException,
+        amenity_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        AmenityAlreadyAddedException,
+        amenity_already_added_handler,
+    )
+
+    app.add_exception_handler(
+        AmenityNotAddedException,
+        amenity_not_added_handler,
     )

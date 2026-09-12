@@ -18,6 +18,7 @@ class PropertyCreate(BaseModel):
     price_per_night: Decimal = Field(..., gt=0, description="Цена объекта недвижимости за ночь", max_digits=10, scale=2)
     latitude: Optional[Decimal] = Field(None, gt=-90, lt=90, description="Широта объекта недвижимости")
     longitude: Optional[Decimal] = Field(None, gt=-180, lt=180, description="Долгота объекта недвижимости")
+    amenity_ids: list[int] | None = Field(None, description="Список ID удобств объекта недвижимости")
 
 
 class PropertyUpdate(BaseModel):
