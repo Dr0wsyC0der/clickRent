@@ -14,7 +14,7 @@ from app.schemas.auth import (
     TokenResponse,
 )
 from app.security.jwt import create_access_token, create_refresh_token, decode_token
-
+from app.schemas.user import UserUpdate
 
 class AuthService:
     def __init__(
@@ -132,3 +132,15 @@ class AuthService:
             raise RefreshTokenExpiredException()
         
         return result, payload
+
+    async def update_me(self,user: UserModel,user_data: UserUpdate,) -> UserModel:
+        update_data = user_data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(user, key, value)
+        try:
+            await self.user_repository.update(user)
+        except Exception:
+            await self.user_repository.rollback()
+            raise
+
+        return user
