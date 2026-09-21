@@ -1,4 +1,4 @@
-from sqlalchemy import select, and_, update
+from sqlalchemy import select, and_, update, func
 from datetime import datetime
 from app.models.bookings import Booking as BookingModel
 from typing import List
@@ -17,9 +17,18 @@ class BookingRepository(BaseRepository):
         await self.session.execute(stmt)
         await self.session.commit()
 
-    async def get_user_bookings(self, user_id: int) -> List[BookingModel]:
-        result = await self.session.scalars(select(BookingModel).where(BookingModel.guest_id == user_id))
-        return result.all()
+    async def get_user_bookings(self,user_id: int,page: int,size: int,) -> tuple[list[BookingModel], int]:
+        count_query = (select(func.count()).select_from(BookingModel).where(BookingModel.guest_id == user_id))
+        total = await self.session.scalar(count_query)
+        result = await self.session.scalars(
+            select(BookingModel)
+            .where(BookingModel.guest_id == user_id)
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        bookings = result.all()
+
+        return bookings, total
 
     async def get_all_bookings(self) -> List[BookingModel]:
         result = await self.session.scalars(select(BookingModel))

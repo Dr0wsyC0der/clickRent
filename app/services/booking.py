@@ -41,8 +41,12 @@ class BookingService:
             raise BookingStatusException("Менять статус бронирования на отмененный невозможно, так как оно уже завершено или отменено.")
         await self.booking_repository.cancel_booking(booking_id)
 
-    async def get_user_bookings(self, user_id: int) -> List[BookingModel]:
-        return await self.booking_repository.get_user_bookings(user_id)
+    async def get_user_bookings(self,user_id: int,page: int,size: int,) -> tuple[list[BookingModel], int]:
+        return await self.booking_repository.get_user_bookings(
+            user_id=user_id,
+            page=page,
+            size=size,
+        )
 
     async def get_booking_by_id(self, booking_id: int, user_id: int) -> BookingModel:
         booking = await self.booking_repository.get_booking_by_id(booking_id)

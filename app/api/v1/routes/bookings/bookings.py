@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, status
 from app.models.users import User
 from app.services.booking import BookingService
-from app.schemas.booking import CreateBooking, BookingResponse
+from app.schemas.booking import (
+    CreateBooking,
+    BookingResponse,
+    BookingListParams,
+    BookingListResponse,
+)
 from app.api.dependencies.booking import get_booking_service
 from app.api.dependencies.auth import get_current_user, check_admin
 
@@ -22,12 +27,26 @@ async def create_booking(
     )
     return new_booking
 
-@router.get("/my", response_model=list[BookingResponse], status_code=status.HTTP_200_OK)
+@router.get("/my",response_model=BookingListResponse,status_code=status.HTTP_200_OK)
 async def get_user_bookings(
+    params: BookingListParams = Depends(),
     current_user: User = Depends(get_current_user),
     booking_service: BookingService = Depends(get_booking_service)
 ):
-    return await booking_service.get_user_bookings(current_user.id)
+    bookings, total = await booking_service.get_user_bookings(
+        user_id=current_user.id,
+        page=params.page,
+        size=params.size,
+    )
+    pages = (total + params.size - 1) // params.size
+
+    return BookingListResponse(
+        bookings=bookings,
+        total=total,
+        page=params.page,
+        size=params.size,
+        pages=pages,
+    )
 
 @router.get("/{booking_id}", response_model=BookingResponse, status_code=status.HTTP_200_OK)
 async def get_booking_by_id(

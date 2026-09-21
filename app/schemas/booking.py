@@ -33,3 +33,14 @@ class BookingListResponse(BaseModel):
     total: int = Field(..., description="Общее количество бронирований")
 
     model_config = ConfigDict(from_attributes=True)
+
+class BookingListParams(BaseModel):
+    page: int = Field(1, ge=1, description="Номер страницы")
+    size: int = Field( 10, ge=1, le=100, description="Количество бронирований на странице")
+
+class BookingListResponse(BaseModel):
+    bookings: list[BookingResponse] = Field(...,description="Список бронирований")
+    total: int = Field(...,description="Общее количество бронирований")
+    page: int = Field(...,description="Номер текущей страницы")
+    size: int = Field(...,description="Количество бронирований на странице")
+    pages: int = Field(...,description="Общее количество страниц")
