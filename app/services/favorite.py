@@ -26,5 +26,9 @@ class FavoriteService:
             raise FavoriteNotFoundException("Недвижимость не найдена в избранном.")
         await self.favorite_repository.remove_favorite(favorite)
 
-    async def get_user_favorites(self, user_id: int) -> list[PropertyModel]:    
-        return await self.favorite_repository.get_user_favorites(user_id)
+    async def get_user_favorites(self,user_id: int,page: int,size: int,) -> tuple[list[PropertyModel], int]:
+        return await self.favorite_repository.get_user_favorites(
+            user_id=user_id,
+            page=page,
+            size=size,
+        )

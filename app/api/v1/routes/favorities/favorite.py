@@ -3,7 +3,7 @@ from app.models.users import User
 from app.services.favorite import FavoriteService
 from app.api.dependencies.favorite import get_favorite_service
 from app.api.dependencies.auth import get_current_user
-from app.schemas.property import PropertyShortResponse
+from app.schemas.favorite import FavoriteListParams, FavoriteListResponse
 
 router = APIRouter(prefix="/favorites", tags=["favorites"])
 
@@ -24,10 +24,22 @@ async def remove_favorite(
 ):
     await favorite_service.remove_favorite(current_user.id, property_id)
 
-@router.get("/", response_model=list[PropertyShortResponse], status_code = status.HTTP_200_OK)
+@router.get("/",response_model=FavoriteListResponse,status_code=status.HTTP_200_OK)
 async def get_user_favorites(
+    params: FavoriteListParams = Depends(),
     current_user: User = Depends(get_current_user),
     favorite_service: FavoriteService = Depends(get_favorite_service)
 ):
-    favorites = await favorite_service.get_user_favorites(current_user.id)
-    return favorites
+    favorites, total = await favorite_service.get_user_favorites(
+        user_id=current_user.id,
+        page=params.page,
+        size=params.size,
+    )
+    pages = (total + params.size - 1) // params.size
+    return FavoriteListResponse(
+        properties=favorites,
+        total=total,
+        page=params.page,
+        size=params.size,
+        pages=pages,
+    )
