@@ -5,12 +5,15 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-
+from app.security.hashing import hash_password
 from app.db.base import Base
 import app.models
 from app.models.users import User
 from decimal import Decimal
 from app.models.properties import Property
+from httpx import AsyncClient, ASGITransport
+from app.main import app
+from app.api.dependencies.db import get_session
 
 
 TEST_DATABASE_URL = (
@@ -45,6 +48,41 @@ async def db_session(test_engine):
         yield session
 
 @pytest_asyncio.fixture
+async def client(db_session):
+    async def override_get_session():
+        yield db_session
+
+    app.dependency_overrides[get_session] = override_get_session
+
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+    ) as client:
+        yield client
+
+    app.dependency_overrides.clear()
+
+@pytest_asyncio.fixture
+async def auth_headers(client, api_user):
+    response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "api_test_user",
+            "password": "test_password",
+        },
+    )
+
+    assert response.status_code == 200
+
+    token = response.json()["access_token"]
+
+    return {
+        "Authorization": f"Bearer {token}"
+    }
+
+@pytest_asyncio.fixture
 async def guest(db_session):
     user = User(
         username="test_guest",
@@ -77,3 +115,68 @@ async def property(db_session, guest):
     await db_session.flush()
 
     return property
+
+@pytest_asyncio.fixture
+async def api_user(db_session):
+    user = User(
+        username="api_test_user",
+        email="api_test@test.com",
+        password_hash=hash_password("test_password"),
+    )
+
+    db_session.add(user)
+    await db_session.flush()
+
+    return user
+
+@pytest_asyncio.fixture
+async def owner(db_session):
+    user = User(
+        username="api_owner",
+        email="api_owner@test.com",
+        password_hash=hash_password("owner_password"),
+    )
+
+    db_session.add(user)
+    await db_session.flush()
+
+    return user
+
+@pytest_asyncio.fixture
+async def owner_property(db_session, owner):
+    property = Property(
+        owner_id=owner.id,
+        title="Owner apartment",
+        description="Owner test apartment",
+        price_per_night=Decimal("100.00"),
+        country="Russia",
+        city="Moscow",
+        address="Owner street, 1",
+        rooms=2,
+        beds=2,
+        bathrooms=1,
+        guest_capacity=4,
+    )
+
+    db_session.add(property)
+    await db_session.flush()
+
+    return property
+
+@pytest_asyncio.fixture
+async def owner_auth_headers(client, owner):
+    response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "api_owner",
+            "password": "owner_password",
+        },
+    )
+
+    assert response.status_code == 200
+
+    token = response.json()["access_token"]
+
+    return {
+        "Authorization": f"Bearer {token}",
+    }
