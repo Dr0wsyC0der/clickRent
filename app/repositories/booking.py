@@ -17,6 +17,16 @@ class BookingRepository(BaseRepository):
         await self.session.execute(stmt)
         await self.session.commit()
 
+    async def confirm_booking(self, booking_id: int) -> None:
+        stmt = (
+            update(BookingModel)
+            .where(BookingModel.id == booking_id)
+            .values(status=BookingStatus.CONFIRMED)
+        )
+
+        await self.session.execute(stmt)
+        await self.session.commit()
+
     async def get_user_bookings(self,user_id: int,page: int,size: int,) -> tuple[list[BookingModel], int]:
         count_query = (select(func.count()).select_from(BookingModel).where(BookingModel.guest_id == user_id))
         total = await self.session.scalar(count_query)

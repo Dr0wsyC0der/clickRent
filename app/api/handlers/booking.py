@@ -13,31 +13,31 @@ from app.exceptions.booking import (
 async def property_not_found_handler(request: Request, exc: PropertyNotFoundException):
     return JSONResponse(
         status_code=404,
-        content={"detail": "Объект недвижимости не найден"},
+        content={"detail": str(exc)},
     )
 
 async def booking_conflict_handler(request: Request, exc: BookingConflictException):
     return JSONResponse(
         status_code=409,
-        content={"detail": "Конфликт бронирования: выбранные даты уже заняты"},
+        content={"detail": str(exc)},
     )
 
 async def invalid_booking_dates_handler(request: Request, exc: InvalidBookingDatesException):
     return JSONResponse(
         status_code=400,
-        content={"detail": "Неверные даты бронирования"},
+        content={"detail": str(exc)},
     )
 
 async def booking_not_found_handler(request: Request, exc: BookingNotFoundException):
     return JSONResponse(
         status_code=404,
-        content={"detail": "Бронирование с указанным идентификатором не найдено"},
+        content={"detail": str(exc)},
     )
 
 async def booking_access_denied_handler(request: Request, exc: BookingAccessDeniedException):
     return JSONResponse(
         status_code=403,
-        content={"detail": "У вас нет доступа к этому бронированию"},
+        content={"detail": str(exc)},
     )
 
 async def booking_status_exception_handler(request: Request, exc: BookingStatusException):

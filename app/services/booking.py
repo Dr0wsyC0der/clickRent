@@ -41,6 +41,37 @@ class BookingService:
             raise BookingStatusException("Менять статус бронирования на отмененный невозможно, так как оно уже завершено или отменено.")
         await self.booking_repository.cancel_booking(booking_id)
 
+    async def confirm_booking(self,booking_id: int,user_id: int,) -> None:
+        booking = await self.booking_repository.get_booking_by_id(
+            booking_id
+        )
+
+        if booking is None:
+            raise BookingNotFoundException(
+                "Бронирование с указанным идентификатором не найдено."
+            )
+
+        booking_property = await self.property_repository.get_by_id(
+            booking.property_id
+        )
+
+        if booking_property is None:
+            raise PropertyNotFoundException(
+                "Недвижимость, связанная с бронированием, не найдена."
+            )
+
+        if booking_property.owner_id != user_id:
+            raise BookingAccessDeniedException(
+                "Только владелец недвижимости может подтвердить бронирование."
+            )
+
+        if booking.status != BookingStatus.PENDING:
+            raise BookingStatusException(
+                "Подтвердить можно только ожидающее бронирование."
+            )
+
+        await self.booking_repository.confirm_booking(booking_id)
+
     async def get_user_bookings(self,user_id: int,page: int,size: int,) -> tuple[list[BookingModel], int]:
         return await self.booking_repository.get_user_bookings(
             user_id=user_id,

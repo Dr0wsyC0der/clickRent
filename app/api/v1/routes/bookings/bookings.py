@@ -64,6 +64,17 @@ async def cancel_booking(
 ):
     await booking_service.cancel_booking(booking_id, current_user.id)
 
+@router.post("/{booking_id}/confirm",status_code=status.HTTP_204_NO_CONTENT)
+async def confirm_booking(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    booking_service: BookingService = Depends(get_booking_service)
+):
+    await booking_service.confirm_booking(
+        booking_id=booking_id,
+        user_id=current_user.id,
+    )
+
 @router.get("/", response_model=list[BookingResponse], dependencies=[Depends(check_admin)], status_code=status.HTTP_200_OK)
 async def get_all_bookings(
     booking_service: BookingService = Depends(get_booking_service)
