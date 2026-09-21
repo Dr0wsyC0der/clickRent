@@ -26,8 +26,16 @@ class ReviewResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class ReviewListParams(BaseModel):
+    page: int = Field(1,ge=1,description="Номер страницы")
+    size: int = Field(10,ge=1,le=100,description="Количество отзывов на странице")
+
+
 class ReviewListResponse(BaseModel):
-    reviews: List[ReviewResponse] = Field(..., description="Список отзывов")
-    total: int = Field(..., description="Общее количество отзывов")
+    reviews: List[ReviewResponse] = Field(...,description="Список отзывов")
+    total: int = Field(...,description="Общее количество отзывов")
+    page: int = Field(...,description="Номер текущей страницы")
+    size: int = Field(...,description="Количество отзывов на странице")
+    pages: int = Field(...,description="Общее количество страниц")
 
     model_config = ConfigDict(from_attributes=True)

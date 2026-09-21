@@ -1,6 +1,12 @@
 from fastapi import APIRouter, Depends, status
 from app.models.users import User
-from app.schemas.review import CreateReview, UpdateReview, ReviewResponse
+from app.schemas.review import (
+    CreateReview,
+    UpdateReview,
+    ReviewResponse,
+    ReviewListParams,
+    ReviewListResponse,
+)
 from app.services.review import ReviewService
 from app.api.dependencies.review import get_review_service
 from app.api.dependencies.auth import get_current_user
@@ -20,13 +26,25 @@ async def create_review(
     )
     return new_review
 
-@router.get("/property/{property_id}", response_model=list[ReviewResponse], status_code=status.HTTP_200_OK)
+@router.get("/property/{property_id}",response_model=ReviewListResponse,status_code=status.HTTP_200_OK)
 async def get_property_reviews(
     property_id: int,
+    params: ReviewListParams = Depends(),
     review_service: ReviewService = Depends(get_review_service)
 ):
-    reviews = await review_service.get_property_reviews(property_id=property_id)
-    return reviews
+    reviews, total = await review_service.get_property_reviews(
+        property_id=property_id,
+        page=params.page,
+        size=params.size,
+    )
+    pages = (total + params.size - 1) // params.size
+    return ReviewListResponse(
+        reviews=reviews,
+        total=total,
+        page=params.page,
+        size=params.size,
+        pages=pages,
+    )
 
 @router.get("/{review_id}", response_model=ReviewResponse, status_code=status.HTTP_200_OK)
 async def get_review_by_id(

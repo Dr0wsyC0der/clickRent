@@ -36,9 +36,12 @@ class ReviewService:
             raise ReviewNotFoundException("Отзыв с указанным ID не найден.")
         return review
 
-    async def get_property_reviews(self, property_id: int) -> list[ReviewModel]:
-        return await self.review_repository.get_property_reviews(property_id)
-
+    async def get_property_reviews(self,property_id: int,page: int,size: int,) -> tuple[list[ReviewModel], int]:
+        return await self.review_repository.get_property_reviews(
+            property_id=property_id,
+            page=page,
+            size=size,
+        )
     async def update_review(self, user_id: int, review_id: int, review_data: UpdateReview) -> ReviewModel | None:
         review = await self.review_repository.get_by_id(review_id)
         if not review:

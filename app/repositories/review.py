@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.models.reviews import Review as ReviewModel
 
 from app.repositories.base import BaseRepository
@@ -19,9 +19,21 @@ class ReviewRepository(BaseRepository):
         result = await self.session.scalars(select(ReviewModel).where(ReviewModel.booking_id == booking_id))
         return result.first()
 
-    async def get_property_reviews(self, property_id: int) -> list[ReviewModel]:
-        result = await self.session.scalars(select(ReviewModel).where(ReviewModel.property_id == property_id))
-        return result.all() 
+    async def get_property_reviews(self,property_id: int,page: int,size: int,) -> tuple[list[ReviewModel], int]:
+        count_query = (
+            select(func.count())
+            .select_from(ReviewModel)
+            .where(ReviewModel.property_id == property_id)
+        )
+        total = await self.session.scalar(count_query)
+        result = await self.session.scalars(
+            select(ReviewModel)
+            .where(ReviewModel.property_id == property_id)
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        reviews = result.all()
+        return reviews, total
 
     async def update(self, review: ReviewModel) -> ReviewModel:
         await self.session.commit()
