@@ -15,7 +15,7 @@ class PropertyCreate(BaseModel):
     country: str = Field(..., description="Страна объекта недвижимости", max_length=50)
     city: str = Field(..., description="Город объекта недвижимости", max_length=50)
     address: str = Field(..., description="Адрес объекта недвижимости", max_length=100)
-    price_per_night: Decimal = Field(..., gt=0, description="Цена объекта недвижимости за ночь", max_digits=10, scale=2)
+    price_per_night: Decimal = Field(..., gt=0, description="Цена объекта недвижимости за ночь", max_digits=10, decimal_places=2)
     latitude: Optional[Decimal] = Field(None, gt=-90, lt=90, description="Широта объекта недвижимости")
     longitude: Optional[Decimal] = Field(None, gt=-180, lt=180, description="Долгота объекта недвижимости")
     amenity_ids: list[int] | None = Field(None, description="Список ID удобств объекта недвижимости")
@@ -31,7 +31,7 @@ class PropertyUpdate(BaseModel):
     country: Optional[str] = Field(None, description="Страна объекта недвижимости", max_length=50)
     city: Optional[str] = Field(None, description="Город объекта недвижимости", max_length=50)
     address: Optional[str] = Field(None, description="Адрес объекта недвижимости", max_length=100)
-    price_per_night: Optional[Decimal] = Field(None, gt=0, description="Цена объекта недвижимости за ночь", max_digits=10, scale=2)
+    price_per_night: Optional[Decimal] = Field(None, gt=0, description="Цена объекта недвижимости за ночь", max_digits=10, decimal_places=2)
     latitude: Optional[Decimal] = Field(None, gt=-90, lt=90, description="Широта объекта недвижимости")
     longitude: Optional[Decimal] = Field(None, gt=-180, lt=180, description="Долгота объекта недвижимости")
 
