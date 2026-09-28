@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from app.db.enums import UserRole
 from app.security.hashing import hash_password
 from app.db.base import Base
 import app.models
@@ -135,6 +136,7 @@ async def owner(db_session):
         username="api_owner",
         email="api_owner@test.com",
         password_hash=hash_password("owner_password"),
+        role=UserRole.HOST,
     )
 
     db_session.add(user)
