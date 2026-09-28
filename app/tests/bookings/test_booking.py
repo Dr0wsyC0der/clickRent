@@ -15,7 +15,14 @@ from app.exceptions.booking import (
     BookingStatusException,
     BookingNotFoundException,
 )
-
+from app.exceptions.booking import (
+    BookingConflictException,
+    InvalidBookingDatesException,
+    BookingAccessDeniedException,
+    BookingStatusException,
+    BookingNotFoundException,
+    PropertyNotFoundException,
+)
 
 @pytest.fixture
 def booking_service(db_session):
@@ -256,4 +263,117 @@ async def test_confirm_nonexistent_booking(booking_service):
         await booking_service.confirm_booking(
             booking_id=999999,
             user_id=1,
+        )
+
+@pytest.mark.asyncio
+async def test_cancel_confirmed_booking(
+    db_session, booking_service, booking_repository, guest, property
+):
+    booker = User(
+        username="confirmed_booker",
+        email="confirmed_booker@test.com",
+        password_hash="hashed_password",
+    )
+    db_session.add(booker)
+    await db_session.flush()
+
+    booking = await booking_service.create_booking(
+        user_id=booker.id,
+        property_id=property.id,
+        check_in=datetime(2027, 4, 1, tzinfo=timezone.utc),
+        check_out=datetime(2027, 4, 4, tzinfo=timezone.utc),
+    )
+
+    await booking_service.confirm_booking(
+        booking_id=booking.id,
+        user_id=guest.id,
+    )
+
+    await booking_service.cancel_booking(
+        booking_id=booking.id,
+        user_id=booker.id,
+    )
+
+    cancelled_booking = await booking_repository.get_booking_by_id(booking.id)
+
+    assert cancelled_booking is not None
+    assert cancelled_booking.status == BookingStatus.CANCELLED
+
+@pytest.mark.asyncio
+async def test_cancel_booking_by_not_owner(
+    db_session, booking_service, booking_repository, guest, property
+):
+    booker = User(
+        username="cancel_booker",
+        email="cancel_booker@test.com",
+        password_hash="hashed_password",
+    )
+    other_user = User(
+        username="cancel_other",
+        email="cancel_other@test.com",
+        password_hash="hashed_password",
+    )
+
+    db_session.add_all([booker, other_user])
+    await db_session.flush()
+
+    booking = await booking_service.create_booking(
+        user_id=booker.id,
+        property_id=property.id,
+        check_in=datetime(2027, 5, 1, tzinfo=timezone.utc),
+        check_out=datetime(2027, 5, 4, tzinfo=timezone.utc),
+    )
+
+    with pytest.raises(BookingAccessDeniedException):
+        await booking_service.cancel_booking(
+            booking_id=booking.id,
+            user_id=other_user.id,
+        )
+
+    current_booking = await booking_repository.get_booking_by_id(booking.id)
+
+    assert current_booking is not None
+    assert current_booking.status == BookingStatus.PENDING
+
+@pytest.mark.asyncio
+async def test_get_booking_by_not_owner(
+    db_session, booking_service, booking_repository, guest, property
+):
+    booker = User(
+        username="get_booker",
+        email="get_booker@test.com",
+        password_hash="hashed_password",
+    )
+    other_user = User(
+        username="get_other",
+        email="get_other@test.com",
+        password_hash="hashed_password",
+    )
+
+    db_session.add_all([booker, other_user])
+    await db_session.flush()
+
+    booking = await booking_service.create_booking(
+        user_id=booker.id,
+        property_id=property.id,
+        check_in=datetime(2027, 6, 1, tzinfo=timezone.utc),
+        check_out=datetime(2027, 6, 4, tzinfo=timezone.utc),
+    )
+
+    with pytest.raises(BookingAccessDeniedException):
+        await booking_service.get_booking_by_id(
+            booking_id=booking.id,
+            user_id=other_user.id,
+        )
+
+@pytest.mark.asyncio
+async def test_create_booking_for_nonexistent_property(
+    booking_service, guest
+):
+    with pytest.raises(PropertyNotFoundException):
+        await booking_service.create_booking(
+            user_id=guest.id,
+            property_id=999999,
+            check_in=datetime(2027, 7, 1, tzinfo=timezone.utc),
+            check_out=datetime(2027, 7, 4, tzinfo=timezone.utc),
         )
