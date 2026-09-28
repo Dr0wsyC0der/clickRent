@@ -8,13 +8,15 @@ from sqlalchemy.ext.asyncio import (
 from app.db.enums import UserRole
 from app.security.hashing import hash_password
 from app.db.base import Base
-import app.models
 from app.models.users import User
 from decimal import Decimal
 from app.models.properties import Property
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.api.dependencies.db import get_session
+from datetime import datetime, timedelta, timezone
+from app.models.bookings import Booking
+from app.db.enums import BookingStatus
 
 
 TEST_DATABASE_URL = (
@@ -164,6 +166,20 @@ async def owner_property(db_session, owner):
     await db_session.flush()
 
     return property
+
+@pytest_asyncio.fixture
+async def completed_booking(db_session, api_user, owner_property):
+    booking = Booking(
+        property_id=owner_property.id,
+        guest_id=api_user.id,
+        check_in=datetime.now(timezone.utc) - timedelta(days=5),
+        check_out=datetime.now(timezone.utc) - timedelta(days=2),
+        total_price=Decimal("300.00"),
+        status=BookingStatus.COMPLETED,
+    )
+    db_session.add(booking)
+    await db_session.flush()
+    return booking
 
 @pytest_asyncio.fixture
 async def owner_auth_headers(client, owner):
