@@ -20,8 +20,8 @@ class ReviewService:
             raise ReviewAccessDeniedException("Отзыв можно оставить только для завершенных бронирования.")
         if booking.property_id != review_data.property_id:
             raise ReviewAccessDeniedException("Отзыв можно оставить только для недвижимости, связанной с бронированием.")
-        exsisting_review = await self.review_repository.get_by_booking_id(review_data.booking_id)
-        if exsisting_review:
+        existing_review = await self.review_repository.get_by_booking_id(review_data.booking_id)
+        if existing_review:
             raise ReviewAlreadyExistsException("Отзыв для данного бронирования уже существует.")
         review_values = review_data.model_dump()
         new_review = ReviewModel(

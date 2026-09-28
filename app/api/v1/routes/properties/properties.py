@@ -74,7 +74,6 @@ async def get_all_properties(
     property_service: PropertyService = Depends(get_property_service),
     params: PropertyListParams = Depends()
 ):
-    #ПОТОМ БУДЕТ ПАГИНАЦИЯ
     properties, total = await property_service.get_all_properties(params)
     pages = (total + params.size - 1) // params.size
     return PropertySearchResponse(
@@ -93,7 +92,7 @@ async def get_property_by_id(
     property = await property_service.get_property_by_id(property_id)
     return property
 
-@router.post("/{property_id}/amenities/{amenity_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{property_id}/amenities/{amenity_id}", dependencies=[Depends(check_host)], status_code=status.HTTP_204_NO_CONTENT)
 async def add_amenity_to_property(
     property_id: int,
     amenity_id: int,
@@ -113,7 +112,7 @@ async def get_property_amenities(
 ):
     return await property_service.get_property_amenities(property_id)
 
-@router.delete("/{property_id}/amenities/{amenity_id}",status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{property_id}/amenities/{amenity_id}", dependencies=[Depends(check_host)], status_code=status.HTTP_204_NO_CONTENT)
 async def remove_amenity_from_property(
     property_id: int,
     amenity_id: int,

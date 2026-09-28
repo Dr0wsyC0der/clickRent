@@ -1,5 +1,5 @@
 import pytest
-
+from app.models.amenities import Amenity
 
 PROPERTY_DATA = {
     "title": "Test apartment",
@@ -429,3 +429,126 @@ async def test_search_properties_by_price(
 
     assert data["total"] == 1
     assert data["properties"][0]["price_per_night"] == 500.0
+
+@pytest.mark.asyncio
+async def test_add_amenity_to_property(
+    client,
+    db_session,
+    owner_auth_headers,
+    owner_property,
+):
+    amenity = Amenity(
+        name="Wi-Fi",
+        description="Free Wi-Fi",
+    )
+    db_session.add(amenity)
+    await db_session.flush()
+
+    response = await client.post(
+        f"/api/v1/properties/{owner_property.id}/amenities/{amenity.id}",
+        headers=owner_auth_headers,
+    )
+
+    assert response.status_code == 204
+
+    response = await client.get(
+        f"/api/v1/properties/{owner_property.id}/amenities"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["id"] == amenity.id
+    assert data[0]["name"] == "Wi-Fi"
+
+@pytest.mark.asyncio
+async def test_add_nonexistent_amenity(
+    client,
+    owner_auth_headers,
+    owner_property,
+):
+    response = await client.post(
+        f"/api/v1/properties/{owner_property.id}/amenities/999999",
+        headers=owner_auth_headers,
+    )
+
+    assert response.status_code == 404
+
+@pytest.mark.asyncio
+async def test_add_amenity_by_non_host(
+    client,
+    db_session,
+    auth_headers,
+    owner_property,
+):
+    amenity = Amenity(
+        name="Parking",
+        description="Free parking",
+    )
+    db_session.add(amenity)
+    await db_session.flush()
+
+    response = await client.post(
+        f"/api/v1/properties/{owner_property.id}/amenities/{amenity.id}",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 403
+
+@pytest.mark.asyncio
+async def test_remove_amenity_from_property(
+    client,
+    db_session,
+    owner_auth_headers,
+    owner_property,
+):
+    amenity = Amenity(
+        name="Air conditioning",
+        description="Air conditioning in every room",
+    )
+    db_session.add(amenity)
+    await db_session.flush()
+
+    response = await client.post(
+        f"/api/v1/properties/{owner_property.id}/amenities/{amenity.id}",
+        headers=owner_auth_headers,
+    )
+
+    assert response.status_code == 204
+
+    response = await client.delete(
+        f"/api/v1/properties/{owner_property.id}/amenities/{amenity.id}",
+        headers=owner_auth_headers,
+    )
+
+    assert response.status_code == 204
+
+    response = await client.get(
+        f"/api/v1/properties/{owner_property.id}/amenities"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+@pytest.mark.asyncio
+async def test_remove_not_added_amenity(
+    client,
+    db_session,
+    owner_auth_headers,
+    owner_property,
+):
+    amenity = Amenity(
+        name="Pool",
+        description="Swimming pool",
+    )
+    db_session.add(amenity)
+    await db_session.flush()
+
+    response = await client.delete(
+        f"/api/v1/properties/{owner_property.id}/amenities/{amenity.id}",
+        headers=owner_auth_headers,
+    )
+
+    assert response.status_code == 409

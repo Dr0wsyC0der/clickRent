@@ -19,6 +19,7 @@ class PropertyRepository(BaseRepository):
 
         result = await self.session.scalars(
             select(PropertyModel)
+            .order_by(PropertyModel.created_at.desc())
             .offset((filters.page - 1) * filters.size)
             .limit(filters.size)
         )
@@ -111,7 +112,11 @@ class PropertyRepository(BaseRepository):
         total = await self.session.scalar(count_query)
         
         result = await self.session.scalars(
-            select(PropertyModel).where(*conditions).offset((filters.page - 1) * filters.size).limit(filters.size)
+            select(PropertyModel)
+            .where(*conditions)
+            .order_by(PropertyModel.created_at.desc())
+            .offset((filters.page - 1) * filters.size)
+            .limit(filters.size)
         )
 
         properties = result.all()

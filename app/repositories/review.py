@@ -29,6 +29,7 @@ class ReviewRepository(BaseRepository):
         result = await self.session.scalars(
             select(ReviewModel)
             .where(ReviewModel.property_id == property_id)
+            .order_by(ReviewModel.created_at.desc())
             .offset((page - 1) * size)
             .limit(size)
         )

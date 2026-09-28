@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from decimal import Decimal
-
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 class PropertyCreate(BaseModel):
@@ -85,6 +85,22 @@ class PropertySearchParams(PropertyListParams):
     rating: float | None = Field(None, ge=0, le=5, description="Рейтинг объекта недвижимости")
     check_in: datetime| None = Field(None, description="Дата заезда в формате YYYY-MM-DD")
     check_out: datetime | None = Field(None, description="Дата выезда в формате YYYY-MM-DD")
+
+    @model_validator(mode="after")
+    def validate_dates(self):
+        if (self.check_in is None) != (self.check_out is None):
+            raise ValueError("Необходимо указать обе даты: check_in и check_out")
+
+        if self.check_in and self.check_out and self.check_in >= self.check_out:
+            raise ValueError("Дата заезда должна быть раньше даты выезда")
+        if (
+            self.min_price is not None
+            and self.max_price is not None
+            and self.min_price > self.max_price
+        ):
+            raise ValueError("Минимальная цена не может быть больше максимальной")
+
+        return self
 
 class PropertySearchResponse(BaseModel):
     properties: list[PropertyShortResponse] = Field(..., description="Список объектов недвижимости")

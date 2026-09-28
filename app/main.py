@@ -58,6 +58,3 @@ async def health():
         "service": "ClickRent API",
     }
 
-
-if __name__ == "__main__":
-    main()
