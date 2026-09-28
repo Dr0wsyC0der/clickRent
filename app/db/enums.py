@@ -17,3 +17,4 @@ class NotificationType(enum.Enum):
     BOOKING_CONFIRMED = "booking_confirmed"
     NEW_MESSAGE = "new_message"
     NEW_REVIEW = "new_review"
+    BOOKING_CANCELLED = "booking_cancelled"

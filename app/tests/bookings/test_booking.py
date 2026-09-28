@@ -23,12 +23,27 @@ from app.exceptions.booking import (
     BookingNotFoundException,
     PropertyNotFoundException,
 )
+from app.repositories.notification import NotificationRepository
+from app.services.notification import NotificationService
+from sqlalchemy import select
+from app.models.notifications import Notification
+from app.db.enums import NotificationType
 
 @pytest.fixture
-def booking_service(db_session):
+def notification_service(db_session):
+    return NotificationService(
+        notification_repository=NotificationRepository(db_session),
+    )
+
+@pytest.fixture
+def booking_service(
+    db_session,
+    notification_service,
+):
     return BookingService(
         booking_repository=BookingRepository(db_session),
         property_repository=PropertyRepository(db_session),
+        notification_service=notification_service,
     )
 
 
@@ -39,7 +54,7 @@ def booking_repository(db_session):
 
 @pytest.mark.asyncio
 async def test_create_booking(
-    booking_service, guest, property,
+    db_session, booking_service, guest, property,
 ):
     check_in = datetime(2026, 10, 1, tzinfo=timezone.utc)
     check_out = datetime(2026, 10, 4, tzinfo=timezone.utc)
@@ -58,6 +73,18 @@ async def test_create_booking(
     assert booking.check_out == check_out
     assert booking.status == BookingStatus.PENDING
     assert booking.total_price == Decimal("300.00")
+
+    result = await db_session.scalars(
+    select(Notification).where(
+        Notification.user_id == property.owner_id
+    )
+    )
+
+    notification = result.first()
+
+    assert notification is not None
+    assert notification.type == NotificationType.BOOKING_CREATED
+    assert notification.title == "Новое бронирование"
 
 
 @pytest.mark.asyncio
@@ -125,6 +152,18 @@ async def test_confirm_booking_by_owner(
 
     assert confirmed_booking is not None
     assert confirmed_booking.status == BookingStatus.CONFIRMED
+
+    result = await db_session.scalars(
+    select(Notification).where(
+        Notification.user_id == booker.id
+    )
+    )
+
+    notification = result.first()
+
+    assert notification is not None
+    assert notification.type == NotificationType.BOOKING_CONFIRMED
+    assert notification.title == "Бронирование подтверждено"
 
 
 @pytest.mark.asyncio

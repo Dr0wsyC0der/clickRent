@@ -97,6 +97,13 @@ from app.exceptions.amenity import (
     AmenityNotAddedException,
 )
 
+from app.api.handlers.notification import (
+    notification_not_found_handler
+)
+
+from app.exceptions.notification import (
+    NotificationNotFoundException
+)
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
@@ -233,4 +240,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         AmenityNotAddedException,
         amenity_not_added_handler,
+    )
+
+    app.add_exception_handler(
+        NotificationNotFoundException,
+        notification_not_found_handler,
     )
