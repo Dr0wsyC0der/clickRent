@@ -9,6 +9,7 @@ from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.property_image import PropertyImageRepository
 from app.repositories.amenity import AmenityRepository
 from app.repositories.notification import NotificationRepository
+from app.repositories.property_view import PropertyViewRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 async def get_user_repository(session: AsyncSession = Depends(get_session)) -> UserRepository:
@@ -37,3 +38,6 @@ async def get_amenity_repository(session: AsyncSession = Depends(get_session)) -
 
 async def get_notification_repository(session: AsyncSession = Depends(get_session)) -> NotificationRepository:
     return NotificationRepository(session=session)
+
+async def get_property_view_repository(session: AsyncSession = Depends(get_session)) -> PropertyViewRepository:
+    return PropertyViewRepository(session=session)

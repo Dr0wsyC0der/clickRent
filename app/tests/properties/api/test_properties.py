@@ -1,5 +1,7 @@
 import pytest
 from app.models.amenities import Amenity
+from sqlalchemy import select
+from app.models.property_views import PropertyView
 
 PROPERTY_DATA = {
     "title": "Test apartment",
@@ -146,6 +148,159 @@ async def test_get_property_by_id(
     assert data["title"] == "Test apartment"
     assert data["city"] == "Moscow"
 
+@pytest.mark.asyncio
+async def test_guest_property_view(
+    client,
+    owner_auth_headers,
+    db_session,
+):
+    create_response = await client.post(
+        "/api/v1/properties/",
+        json=PROPERTY_DATA,
+        headers=owner_auth_headers,
+    )
+
+    assert create_response.status_code == 201
+
+    property_id = create_response.json()["id"]
+
+    response = await client.get(
+        f"/api/v1/properties/{property_id}"
+    )
+
+    assert response.status_code == 200
+
+    # Гостю должен выдаться visitor_id
+    assert "visitor_id" in response.cookies
+
+    visitor_id = response.cookies["visitor_id"]
+    assert visitor_id
+
+
+@pytest.mark.asyncio
+async def test_guest_property_view_not_duplicated(
+    client,
+    owner_auth_headers,
+    db_session,
+):
+    create_response = await client.post(
+        "/api/v1/properties/",
+        json=PROPERTY_DATA,
+        headers=owner_auth_headers,
+    )
+
+    assert create_response.status_code == 201
+
+    property_id = create_response.json()["id"]
+
+    # Первое открытие
+    first_response = await client.get(
+        f"/api/v1/properties/{property_id}"
+    )
+
+    assert first_response.status_code == 200
+
+    # Второе открытие тем же клиентом
+    second_response = await client.get(
+        f"/api/v1/properties/{property_id}"
+    )
+
+    assert second_response.status_code == 200
+
+    result = await db_session.execute(
+        select(PropertyView).where(
+            PropertyView.property_id == property_id
+        )
+    )
+
+    views = result.scalars().all()
+
+    assert len(views) == 1
+    assert views[0].visitor_id is not None
+    assert views[0].user_id is None
+
+
+@pytest.mark.asyncio
+async def test_authenticated_user_property_view(
+    client,
+    owner_auth_headers,
+    auth_headers,
+    db_session,
+):
+    create_response = await client.post(
+        "/api/v1/properties/",
+        json=PROPERTY_DATA,
+        headers=owner_auth_headers,
+    )
+
+    assert create_response.status_code == 201
+
+    property_id = create_response.json()["id"]
+
+    response = await client.get(
+        f"/api/v1/properties/{property_id}",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+
+    result = await db_session.execute(
+        select(PropertyView).where(
+            PropertyView.property_id == property_id
+        )
+    )
+
+    views = result.scalars().all()
+
+    assert len(views) == 1
+    assert views[0].user_id is not None
+    assert views[0].visitor_id is None
+
+
+@pytest.mark.asyncio
+async def test_authenticated_user_property_view_not_duplicated(
+    client,
+    owner_auth_headers,
+    auth_headers,
+    db_session,
+):
+    create_response = await client.post(
+        "/api/v1/properties/",
+        json=PROPERTY_DATA,
+        headers=owner_auth_headers,
+    )
+
+    assert create_response.status_code == 201
+
+    property_id = create_response.json()["id"]
+
+    # Первое открытие
+    first_response = await client.get(
+        f"/api/v1/properties/{property_id}",
+        headers=auth_headers,
+    )
+
+    assert first_response.status_code == 200
+
+    # Второе открытие
+    second_response = await client.get(
+        f"/api/v1/properties/{property_id}",
+        headers=auth_headers,
+    )
+
+    assert second_response.status_code == 200
+
+    result = await db_session.execute(
+        select(PropertyView).where(
+            PropertyView.property_id == property_id
+        )
+    )
+
+    views = result.scalars().all()
+
+    assert len(views) == 1
+    assert views[0].user_id is not None
+    assert views[0].visitor_id is None
 
 @pytest.mark.asyncio
 async def test_get_nonexistent_property(client):

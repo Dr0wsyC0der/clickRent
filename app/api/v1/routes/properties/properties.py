@@ -1,10 +1,17 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request, Response
+from uuid import UUID, uuid4
 from app.models.users import User
 from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertySearchParams, PropertySearchResponse, PropertyListParams
 from app.services.property import PropertyService
 from app.api.dependencies.property import get_property_service
-from app.api.dependencies.auth import get_current_user, check_host
+from app.api.dependencies.property_view import get_property_view_service
+from app.services.property_view import PropertyViewService
 from app.schemas.amenity import AmenityResponse
+from app.api.dependencies.auth import (
+    get_current_user,
+    get_optional_current_user,
+    check_host,
+)
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
@@ -84,12 +91,47 @@ async def get_all_properties(
         pages=pages
     )
 
-@router.get("/{property_id}", response_model=PropertyResponse, status_code=status.HTTP_200_OK)
+@router.get("/{property_id}",response_model=PropertyResponse,status_code=status.HTTP_200_OK)
 async def get_property_by_id(
     property_id: int,
-    property_service: PropertyService = Depends(get_property_service)
+    request: Request,
+    response: Response,
+    current_user: User | None = Depends(get_optional_current_user),
+    property_service: PropertyService = Depends(get_property_service),
+    property_view_service: PropertyViewService = Depends(get_property_view_service),
 ):
     property = await property_service.get_property_by_id(property_id)
+
+    if current_user:
+        await property_view_service.create_view(
+            property_id=property_id,
+            user_id=current_user.id,
+        )
+
+    else:
+        visitor_id = request.cookies.get("visitor_id")
+
+        if visitor_id:
+            try:
+                visitor_uuid = UUID(visitor_id)
+            except ValueError:
+                visitor_uuid = uuid4()
+        else:
+            visitor_uuid = uuid4()
+
+        response.set_cookie(
+            key="visitor_id",
+            value=str(visitor_uuid),
+            httponly=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 365,
+        )
+
+        await property_view_service.create_view(
+            property_id=property_id,
+            visitor_id=visitor_uuid,
+        )
+
     return property
 
 @router.post("/{property_id}/amenities/{amenity_id}", dependencies=[Depends(check_host)], status_code=status.HTTP_204_NO_CONTENT)
