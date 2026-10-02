@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     algorithm: str
     refresh_token_expire_days: int
     access_token_expire_minutes: int
+    booking_pending_ttl_minutes: int = 30
+    booking_tasks_interval_seconds: int = 60
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Numeric, DateTime, Enum, CheckConstraint, ForeignKey
+from sqlalchemy import Integer, Numeric, DateTime, Enum, CheckConstraint, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from datetime import datetime
 
@@ -13,6 +13,10 @@ class Booking(Base, TimestampMixin, IDMixin):
         "check_out > check_in",
         name="check_booking_dates"
     ),
+    CheckConstraint(
+        "guests > 0",
+        name="check_booking_guests"
+    ),
     )
 
     property_id: Mapped[int] = mapped_column(ForeignKey("properties.id", ondelete="CASCADE"), index=True)
@@ -21,6 +25,9 @@ class Booking(Base, TimestampMixin, IDMixin):
     check_out: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     total_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     status: Mapped[BookingStatus] = mapped_column(Enum(BookingStatus), nullable=False)
+    guests: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    # Срок удержания дат (soft-lock) для брони в статусе PENDING
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     property: Mapped["Property"] = relationship("Property", back_populates="bookings")
     guest: Mapped["User"] = relationship("User", back_populates="bookings")

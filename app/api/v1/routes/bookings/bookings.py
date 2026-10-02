@@ -6,9 +6,10 @@ from app.schemas.booking import (
     BookingResponse,
     BookingListParams,
     BookingListResponse,
+    HostBookingListParams,
 )
 from app.api.dependencies.booking import get_booking_service
-from app.api.dependencies.auth import get_current_user, check_admin
+from app.api.dependencies.auth import get_current_user, check_admin, check_host
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -23,7 +24,8 @@ async def create_booking(
         user_id=current_user.id,
         property_id=booking_data.property_id,
         check_in=booking_data.check_in,
-        check_out=booking_data.check_out
+        check_out=booking_data.check_out,
+        guests=booking_data.guests,
     )
     return new_booking
 
@@ -37,6 +39,28 @@ async def get_user_bookings(
         user_id=current_user.id,
         page=params.page,
         size=params.size,
+    )
+    pages = (total + params.size - 1) // params.size
+
+    return BookingListResponse(
+        bookings=bookings,
+        total=total,
+        page=params.page,
+        size=params.size,
+        pages=pages,
+    )
+
+@router.get("/host", response_model=BookingListResponse, dependencies=[Depends(check_host)], status_code=status.HTTP_200_OK)
+async def get_host_bookings(
+    params: HostBookingListParams = Depends(),
+    current_user: User = Depends(get_current_user),
+    booking_service: BookingService = Depends(get_booking_service)
+):
+    bookings, total = await booking_service.get_host_bookings(
+        owner_id=current_user.id,
+        page=params.page,
+        size=params.size,
+        status=params.status,
     )
     pages = (total + params.size - 1) // params.size
 

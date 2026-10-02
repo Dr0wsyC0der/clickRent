@@ -8,6 +8,7 @@ from app.exceptions.booking import (
     BookingNotFoundException,
     BookingAccessDeniedException,
     BookingStatusException,
+    BookingCapacityException,
 )
 
 async def property_not_found_handler(request: Request, exc: PropertyNotFoundException):
@@ -43,5 +44,11 @@ async def booking_access_denied_handler(request: Request, exc: BookingAccessDeni
 async def booking_status_exception_handler(request: Request, exc: BookingStatusException):
     return JSONResponse(
         status_code=409,
-        content={"detail": "Менять статус бронирования на отмененный невозможно, так как оно уже завершено или отменено"},
+        content={"detail": str(exc)},
+    )
+
+async def booking_capacity_handler(request: Request, exc: BookingCapacityException):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": str(exc)},
     )

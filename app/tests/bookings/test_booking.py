@@ -56,8 +56,8 @@ def booking_repository(db_session):
 async def test_create_booking(
     db_session, booking_service, guest, property,
 ):
-    check_in = datetime(2026, 10, 1, tzinfo=timezone.utc)
-    check_out = datetime(2026, 10, 4, tzinfo=timezone.utc)
+    check_in = datetime(2030, 10, 1, tzinfo=timezone.utc)
+    check_out = datetime(2030, 10, 4, tzinfo=timezone.utc)
 
     booking = await booking_service.create_booking(
         user_id=guest.id,
@@ -94,16 +94,16 @@ async def test_create_booking_with_intersection(
     await booking_service.create_booking(
         user_id=guest.id,
         property_id=property.id,
-        check_in=datetime(2026, 10, 1, tzinfo=timezone.utc),
-        check_out=datetime(2026, 10, 4, tzinfo=timezone.utc),
+        check_in=datetime(2030, 10, 1, tzinfo=timezone.utc),
+        check_out=datetime(2030, 10, 4, tzinfo=timezone.utc),
     )
 
     with pytest.raises(BookingConflictException):
         await booking_service.create_booking(
             user_id=guest.id,
             property_id=property.id,
-            check_in=datetime(2026, 10, 2, tzinfo=timezone.utc),
-            check_out=datetime(2026, 10, 5, tzinfo=timezone.utc),
+            check_in=datetime(2030, 10, 2, tzinfo=timezone.utc),
+            check_out=datetime(2030, 10, 5, tzinfo=timezone.utc),
         )
 
 
@@ -115,8 +115,8 @@ async def test_create_booking_with_invalid_dates(
         await booking_service.create_booking(
             user_id=guest.id,
             property_id=property.id,
-            check_in=datetime(2026, 10, 5, tzinfo=timezone.utc),
-            check_out=datetime(2026, 10, 1, tzinfo=timezone.utc),
+            check_in=datetime(2030, 10, 5, tzinfo=timezone.utc),
+            check_out=datetime(2030, 10, 1, tzinfo=timezone.utc),
         )
 
 
@@ -136,8 +136,8 @@ async def test_confirm_booking_by_owner(
     booking = await booking_service.create_booking(
         user_id=booker.id,
         property_id=property.id,
-        check_in=datetime(2026, 11, 1, tzinfo=timezone.utc),
-        check_out=datetime(2026, 11, 4, tzinfo=timezone.utc),
+        check_in=datetime(2030, 11, 1, tzinfo=timezone.utc),
+        check_out=datetime(2030, 11, 4, tzinfo=timezone.utc),
     )
 
     assert booking.status == BookingStatus.PENDING
@@ -186,8 +186,8 @@ async def test_confirm_booking_by_not_owner(
     booking = await booking_service.create_booking(
         user_id=booker.id,
         property_id=property.id,
-        check_in=datetime(2026, 12, 1, tzinfo=timezone.utc),
-        check_out=datetime(2026, 12, 4, tzinfo=timezone.utc),
+        check_in=datetime(2030, 12, 1, tzinfo=timezone.utc),
+        check_out=datetime(2030, 12, 4, tzinfo=timezone.utc),
     )
 
     assert booking.status == BookingStatus.PENDING
@@ -212,8 +212,8 @@ async def test_cancel_booking(
     booking = await booking_service.create_booking(
         user_id=guest.id,
         property_id=property.id,
-        check_in=datetime(2027, 1, 1, tzinfo=timezone.utc),
-        check_out=datetime(2027, 1, 4, tzinfo=timezone.utc),
+        check_in=datetime(2031, 1, 1, tzinfo=timezone.utc),
+        check_out=datetime(2031, 1, 4, tzinfo=timezone.utc),
     )
 
     assert booking.status == BookingStatus.PENDING
@@ -236,8 +236,8 @@ async def test_cancel_already_cancelled_booking(
     booking = await booking_service.create_booking(
         user_id=guest.id,
         property_id=property.id,
-        check_in=datetime(2027, 2, 1, tzinfo=timezone.utc),
-        check_out=datetime(2027, 2, 4, tzinfo=timezone.utc),
+        check_in=datetime(2031, 2, 1, tzinfo=timezone.utc),
+        check_out=datetime(2031, 2, 4, tzinfo=timezone.utc),
     )
 
     # Первая отмена
@@ -274,8 +274,8 @@ async def test_confirm_already_confirmed_booking(
     booking = await booking_service.create_booking(
         user_id=booker.id,
         property_id=property.id,
-        check_in=datetime(2027, 3, 1, tzinfo=timezone.utc),
-        check_out=datetime(2027, 3, 4, tzinfo=timezone.utc),
+        check_in=datetime(2031, 3, 1, tzinfo=timezone.utc),
+        check_out=datetime(2031, 3, 4, tzinfo=timezone.utc),
     )
 
     # Первое подтверждение
@@ -319,8 +319,8 @@ async def test_cancel_confirmed_booking(
     booking = await booking_service.create_booking(
         user_id=booker.id,
         property_id=property.id,
-        check_in=datetime(2027, 4, 1, tzinfo=timezone.utc),
-        check_out=datetime(2027, 4, 4, tzinfo=timezone.utc),
+        check_in=datetime(2031, 4, 1, tzinfo=timezone.utc),
+        check_out=datetime(2031, 4, 4, tzinfo=timezone.utc),
     )
 
     await booking_service.confirm_booking(
@@ -359,8 +359,8 @@ async def test_cancel_booking_by_not_owner(
     booking = await booking_service.create_booking(
         user_id=booker.id,
         property_id=property.id,
-        check_in=datetime(2027, 5, 1, tzinfo=timezone.utc),
-        check_out=datetime(2027, 5, 4, tzinfo=timezone.utc),
+        check_in=datetime(2031, 5, 1, tzinfo=timezone.utc),
+        check_out=datetime(2031, 5, 4, tzinfo=timezone.utc),
     )
 
     with pytest.raises(BookingAccessDeniedException):
@@ -395,8 +395,8 @@ async def test_get_booking_by_not_owner(
     booking = await booking_service.create_booking(
         user_id=booker.id,
         property_id=property.id,
-        check_in=datetime(2027, 6, 1, tzinfo=timezone.utc),
-        check_out=datetime(2027, 6, 4, tzinfo=timezone.utc),
+        check_in=datetime(2031, 6, 1, tzinfo=timezone.utc),
+        check_out=datetime(2031, 6, 4, tzinfo=timezone.utc),
     )
 
     with pytest.raises(BookingAccessDeniedException):
@@ -413,6 +413,6 @@ async def test_create_booking_for_nonexistent_property(
         await booking_service.create_booking(
             user_id=guest.id,
             property_id=999999,
-            check_in=datetime(2027, 7, 1, tzinfo=timezone.utc),
-            check_out=datetime(2027, 7, 4, tzinfo=timezone.utc),
+            check_in=datetime(2031, 7, 1, tzinfo=timezone.utc),
+            check_out=datetime(2031, 7, 4, tzinfo=timezone.utc),
         )

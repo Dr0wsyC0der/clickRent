@@ -6,6 +6,7 @@ class BookingStatus(enum.Enum):
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
     COMPLETED = "completed"
+    EXPIRED = "expired"
 
 class UserRole(enum.Enum):
     USER = "user"
@@ -18,3 +19,5 @@ class NotificationType(enum.Enum):
     NEW_MESSAGE = "new_message"
     NEW_REVIEW = "new_review"
     BOOKING_CANCELLED = "booking_cancelled"
+    BOOKING_EXPIRED = "booking_expired"
+    BOOKING_COMPLETED = "booking_completed"

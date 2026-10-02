@@ -5,12 +5,22 @@ from app.schemas.property import PropertySearchParams, PropertyListParams
 from app.models.bookings import Booking as BookingModel
 from app.models.amenities import Amenity as AmenityModel
 from app.models.association_tables import property_amenities as PropertyAmenitiesModel
-from app.db.enums import BookingStatus
+from app.repositories.booking import active_booking_condition
+from datetime import datetime, timezone
 
 
 class PropertyRepository(BaseRepository):
     async def get_by_id(self, property_id: int) -> PropertyModel | None:
         result = await self.session.scalars(select(PropertyModel).where(PropertyModel.id == property_id))
+        return result.first()
+
+    async def get_by_id_for_update(self, property_id: int) -> PropertyModel | None:
+        # Блокировка строки объекта сериализует конкурентные бронирования одного объекта
+        result = await self.session.scalars(
+            select(PropertyModel)
+            .where(PropertyModel.id == property_id)
+            .with_for_update()
+        )
         return result.first()
 
     async def get_all(self, filters: PropertyListParams) -> tuple[list[PropertyModel], int]:
@@ -99,10 +109,7 @@ class PropertyRepository(BaseRepository):
                     BookingModel.property_id == PropertyModel.id,
                     BookingModel.check_in < filters.check_out,
                     BookingModel.check_out > filters.check_in,
-                    BookingModel.status.in_([
-                        BookingStatus.PENDING,
-                        BookingStatus.CONFIRMED,
-                    ])
+                    active_booking_condition(datetime.now(timezone.utc)),
                 )
             )
 
