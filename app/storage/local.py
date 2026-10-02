@@ -32,7 +32,7 @@ class MediaSaver:
         except Exception:
             if file_path.exists():
                 file_path.unlink()
-            
+            raise
 
         return str(file_path.relative_to(self.MEDIA_DIR).as_posix())
 

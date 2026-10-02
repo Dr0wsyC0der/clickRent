@@ -122,7 +122,24 @@ from app.exceptions.chat import (
     InvalidChatParticipantException,
 )
 
+from sqlalchemy.exc import IntegrityError
+
+from app.api.handlers.common import (
+    integrity_error_handler,
+    unhandled_exception_handler,
+)
+
 def register_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(
+        IntegrityError,
+        integrity_error_handler,
+    )
+
+    app.add_exception_handler(
+        Exception,
+        unhandled_exception_handler,
+    )
+
     app.add_exception_handler(
         EmailAlreadyExistsException,
         email_exists_handler,

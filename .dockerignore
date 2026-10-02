@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+.idea
+.vscode
+.pytest_cache
+.ruff_cache
+**/__pycache__
+*.py[cod]
+.env
+media
+app/tests
+docker-compose.yml
+README.md
+CLAUDE.md

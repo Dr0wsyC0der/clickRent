@@ -1,0 +1,2 @@
+# Скрипты выполняются в Linux-контейнере, CRLF ломает shebang
+*.sh text eol=lf

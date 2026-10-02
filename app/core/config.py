@@ -12,7 +12,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     booking_pending_ttl_minutes: int = 30
     booking_tasks_interval_seconds: int = 60
+    log_level: str = "INFO"
+    sql_echo: bool = False
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # extra="ignore": в .env лежат и переменные docker compose (POSTGRES_*, HTTP_PORT, ...)
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
