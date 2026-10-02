@@ -6,7 +6,8 @@ class Settings(BaseSettings):
     app_name: str = "ClickRent"
     environment: Literal["development", "production", "testing"] = "development"
     database_url: str
-    secret_key: str 
+    redis_url: str = "redis://localhost:6379/0"
+    secret_key: str
     algorithm: str
     refresh_token_expire_days: int
     access_token_expire_minutes: int

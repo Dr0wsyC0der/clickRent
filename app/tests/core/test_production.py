@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.main import app
 from app.api.dependencies.db import get_session
 from app.api.dependencies.property import get_property_service
+from app.api.dependencies.redis import get_redis_client
 
 pytestmark = pytest.mark.asyncio
 
@@ -16,11 +17,11 @@ async def test_liveness(client):
     assert response.json()["status"] == "ok"
 
 
-async def test_readiness_with_database(client):
+async def test_readiness_with_database_and_redis(client):
     response = await client.get("/health/ready")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "database": "ok"}
+    assert response.json() == {"status": "ok", "database": "ok", "redis": "ok"}
 
 
 async def test_readiness_without_database(client):
@@ -37,6 +38,20 @@ async def test_readiness_without_database(client):
 
     assert response.status_code == 503
     assert response.json()["database"] == "unavailable"
+    assert response.json()["redis"] == "ok"
+
+
+async def test_readiness_without_redis(client):
+    class BrokenRedis:
+        async def ping(self):
+            raise ConnectionError("redis is down")
+
+    app.dependency_overrides[get_redis_client] = lambda: BrokenRedis()
+
+    response = await client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable", "database": "ok", "redis": "unavailable"}
 
 
 async def test_request_id_header(client):

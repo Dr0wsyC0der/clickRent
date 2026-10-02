@@ -18,12 +18,29 @@ from app.api.dependencies.db import get_session
 from datetime import datetime, timedelta, timezone
 from app.models.bookings import Booking
 from app.db.enums import BookingStatus
+from app.core.redis import create_redis, set_redis
 
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://postgres:postgres@localhost:5432/clickrent_test",
 )
+# Отдельная логическая база Redis, которая очищается перед каждым тестом
+TEST_REDIS_URL = os.getenv("TEST_REDIS_URL", "redis://localhost:6379/15")
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def redis_client():
+    # Клиент создается на каждый тест: соединения redis.asyncio привязаны к event loop теста
+    client = create_redis(TEST_REDIS_URL)
+    await client.flushdb()
+    set_redis(client)
+
+    yield client
+
+    set_redis(None)
+    await client.flushdb()
+    await client.aclose()
 
 
 @pytest_asyncio.fixture

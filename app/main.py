@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 import logging
 from app.api.v1.routes.users.users import router as users_router
 from app.api.v1.routes.auth.auth import router as auth_router
@@ -19,8 +20,10 @@ from app.api.v1.routes.notifications.notifications import router as notification
 from app.api.v1.routes.chats.chats import router as chat_router
 from app.api.handlers.register import register_exception_handlers
 from app.api.dependencies.db import get_session
+from app.api.dependencies.redis import get_redis_client
 from app.core.config import settings
 from app.core.logging import setup_logging
+from app.core.redis import create_redis, set_redis
 from app.db.database import async_session_maker
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.tasks.booking import run_booking_maintenance
@@ -35,6 +38,9 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info("Бэкэнд запущен!")
 
+    redis = create_redis(settings.redis_url)
+    set_redis(redis)
+
     maintenance_task = None
     if settings.environment != "testing":
         maintenance_task = asyncio.create_task(
@@ -47,6 +53,9 @@ async def lifespan(app: FastAPI):
         maintenance_task.cancel()
         with suppress(asyncio.CancelledError):
             await maintenance_task
+
+    set_redis(None)
+    await redis.aclose()
 
     logger.info("Бэкэнд остановлен!")
 
@@ -88,15 +97,25 @@ async def health():
     }
 
 @app.get("/health/ready", tags=["Health"])
-async def readiness(session: AsyncSession = Depends(get_session)):
-    """Readiness: приложение может обслуживать запросы, база данных доступна."""
+async def readiness(
+    session: AsyncSession = Depends(get_session),
+    redis: Redis = Depends(get_redis_client),
+):
+    """Readiness: приложение может обслуживать запросы, PostgreSQL и Redis доступны."""
+    checks = {"database": "ok", "redis": "ok"}
+
     try:
         await session.execute(text("SELECT 1"))
     except Exception:
         logger.exception("Проверка готовности: база данных недоступна")
-        return JSONResponse(
-            status_code=503,
-            content={"status": "unavailable", "database": "unavailable"},
-        )
-    return {"status": "ok", "database": "ok"}
+        checks["database"] = "unavailable"
 
+    try:
+        await redis.ping()
+    except Exception:
+        logger.exception("Проверка готовности: Redis недоступен")
+        checks["redis"] = "unavailable"
+
+    if "unavailable" in checks.values():
+        return JSONResponse(status_code=503, content={"status": "unavailable", **checks})
+    return {"status": "ok", **checks}
