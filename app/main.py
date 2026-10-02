@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
     maintenance_task = None
     if settings.environment != "testing":
         maintenance_task = asyncio.create_task(
-            run_booking_maintenance(async_session_maker, settings.booking_tasks_interval_seconds)
+            run_booking_maintenance(async_session_maker, redis, settings.booking_tasks_interval_seconds)
         )
 
     yield
