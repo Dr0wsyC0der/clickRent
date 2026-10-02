@@ -32,6 +32,7 @@ services:
 
   app:
     build: .
+    image: ${APP_IMAGE:-clickrent-api}
     restart: unless-stopped
     env_file: .env
     environment:

@@ -7,7 +7,7 @@ from sqlalchemy.engine import Connection
 
 import app.models
 
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 
 from alembic import context
 
@@ -62,10 +62,17 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+# Ключ advisory lock миграций: при старте нескольких реплик приложения (каждая выполняет
+# alembic upgrade head) миграции применяет одна, остальные ждут и видят актуальную версию
+MIGRATIONS_LOCK_ID = 2026_10_02
+
+
 def do_run_migrations(connection: Connection) -> None:
     context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
 
     with context.begin_transaction():
+        # Все миграции выполняются в одной транзакции, поэтому лок держится до ее конца
+        connection.execute(text("SELECT pg_advisory_xact_lock(:lock_id)"), {"lock_id": MIGRATIONS_LOCK_ID})
         context.run_migrations()
 
 

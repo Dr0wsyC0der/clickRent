@@ -95,9 +95,13 @@ jobs:
         run: pytest app/tests -q
 
   docker:
-    name: Сборка Docker-образа
+    name: Docker-стек (2 реплики API) и smoke-тест
     runs-on: ubuntu-latest
     needs: test
+    env:
+      APP_IMAGE: clickrent-api:ci
+      HTTP_PORT: "8080"
+      WEB_CONCURRENCY: "2"
     steps:
       - uses: actions/checkout@v4
 
@@ -109,27 +113,24 @@ jobs:
           context: .
           push: false
           load: true
-          tags: clickrent-api:ci
+          tags: ${{ env.APP_IMAGE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Проверка запуска контейнера
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Запуск стека (PostgreSQL, Redis, 2 реплики API по 2 воркера, nginx)
         run: |
-          docker network create clickrent-ci
-          docker run -d --name db --network clickrent-ci \
-            -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clickrent postgres:17
-          docker run -d --name redis --network clickrent-ci redis:7.4-alpine
-          for i in $(seq 1 30); do docker exec db pg_isready -U postgres && break; sleep 2; done
-          docker run -d --name app --network clickrent-ci -p 8000:8000 \
-            -e DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/clickrent \
-            -e REDIS_URL=redis://redis:6379/0 \
-            -e SECRET_KEY=ci-secret-key-not-for-production-use-only \
-            -e ALGORITHM=HS256 -e ACCESS_TOKEN_EXPIRE_MINUTES=30 -e REFRESH_TOKEN_EXPIRE_DAYS=30 \
-            -e ENVIRONMENT=production \
-            clickrent-api:ci
-          for i in $(seq 1 30); do
-            curl -fsS http://localhost:8000/health/ready && exit 0
-            sleep 2
-          done
-          docker logs app
-          exit 1
+          cp .env.example .env
+          docker compose up -d --no-build --scale app=2 --wait --wait-timeout 180
+
+      - name: Smoke-тест через nginx
+        run: |
+          pip install httpx==0.28.1 websockets==17.1 pillow==12.3.0
+          python scripts/smoke_test.py http://localhost:${HTTP_PORT}
+
+      - name: Логи стека
+        if: failure()
+        run: docker compose logs
