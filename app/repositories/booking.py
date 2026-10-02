@@ -144,6 +144,24 @@ class BookingRepository(BaseRepository):
         )
         return result.first() is not None
 
+    async def get_property_booking_stats(self, property_id: int, since: datetime) -> tuple[int, datetime | None]:
+        """Количество бронирований с `since` и дата последнего бронирования (без отмененных и истекших)."""
+        result = await self.session.execute(
+            select(
+                func.count().filter(BookingModel.created_at >= since),
+                func.max(BookingModel.created_at),
+            ).where(
+                BookingModel.property_id == property_id,
+                BookingModel.status.in_([
+                    BookingStatus.PENDING,
+                    BookingStatus.CONFIRMED,
+                    BookingStatus.COMPLETED,
+                ]),
+            )
+        )
+        count, last_booked_at = result.one()
+        return count, last_booked_at
+
     async def get_booking_by_id(self, booking_id: int) -> BookingModel|None:
         result = await self.session.scalars(
             select(BookingModel)

@@ -43,3 +43,11 @@ class FavoriteRepository(BaseRepository):
         )
         properties = result.all()
         return properties, total
+
+    async def count_by_property(self, property_id: int) -> int:
+        result = await self.session.scalar(
+            select(func.count())
+            .select_from(FavoriteModel)
+            .where(FavoriteModel.property_id == property_id)
+        )
+        return result or 0

@@ -1,3 +1,4 @@
+from datetime import date
 from sqlalchemy import select, func
 from sqlalchemy.dialects.postgresql import insert
 from app.models.property_views import PropertyView as PropertyViewModel
@@ -33,6 +34,18 @@ class PropertyViewRepository(BaseRepository):
             select(func.count())
             .select_from(PropertyViewModel)
             .where(PropertyViewModel.property_id == property_id)
+        )
+
+        return result or 0
+
+    async def count_property_views_since(self, property_id: int, since: date) -> int:
+        result = await self.session.scalar(
+            select(func.count())
+            .select_from(PropertyViewModel)
+            .where(
+                PropertyViewModel.property_id == property_id,
+                PropertyViewModel.view_date >= since,
+            )
         )
 
         return result or 0

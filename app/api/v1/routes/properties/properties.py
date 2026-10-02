@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Query, status, Request, Response
+from fastapi import APIRouter, Depends, Query, status, Request, Response, WebSocket, WebSocketDisconnect
 from uuid import UUID, uuid4
 from app.models.users import User
 from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertySearchParams, PropertySearchResponse, PropertyListParams
@@ -8,6 +8,14 @@ from app.api.dependencies.property import get_property_service
 from app.api.dependencies.property_view import get_property_view_service
 from app.services.property_view import PropertyViewService
 from app.schemas.amenity import AmenityResponse
+from app.schemas.property_signal import PropertySignalsResponse
+from app.services.property_signal import PropertySignalService
+from app.api.dependencies.property_signal import get_property_signal_service
+from app.api.dependencies.repositories import get_user_repository
+from app.repositories.user import UserRepository
+from app.exceptions.property import PropertyNotFoundException
+from app.websocket.codes import WS_NOT_FOUND
+from app.websocket.manager import property_viewers_manager
 from app.api.dependencies.auth import (
     get_current_user,
     get_optional_current_user,
@@ -168,4 +176,39 @@ async def remove_amenity_from_property(
         amenity_id=amenity_id,
     )
 
+@router.get("/{property_id}/signals", response_model=PropertySignalsResponse, status_code=status.HTTP_200_OK)
+async def get_property_signals(
+    property_id: int,
+    signal_service: PropertySignalService = Depends(get_property_signal_service),
+):
+    return await signal_service.get_signals(property_id)
 
+@router.websocket("/{property_id}/viewers/ws")
+async def property_viewers_websocket(
+    websocket: WebSocket,
+    property_id: int,
+    token: str | None = Query(None, description="Необязательный access-токен: пользователь с несколькими вкладками считается один раз"),
+    user_repository: UserRepository = Depends(get_user_repository),
+    signal_service: PropertySignalService = Depends(get_property_signal_service),
+):
+    await websocket.accept()
+
+    current_user = await get_optional_current_user(token=token, user_repository=user_repository) if token else None
+
+    try:
+        await signal_service.authorize_watching(property_id)
+    except PropertyNotFoundException as exc:
+        await websocket.close(code=WS_NOT_FOUND, reason=str(exc))
+        return
+
+    property_viewers_manager.connect(property_id, websocket, current_user.id if current_user else None)
+    try:
+        await signal_service.broadcast_viewers_count(property_id)
+        # Клиент только слушает обновления; входящие сообщения (например, ping) игнорируются
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        property_viewers_manager.disconnect(property_id, websocket)
+        await signal_service.broadcast_viewers_count(property_id)
