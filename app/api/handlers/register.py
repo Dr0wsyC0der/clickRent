@@ -8,7 +8,8 @@ from app.api.handlers.auth import (
     refresh_token_expired_handler,
     refresh_token_revoked_handler,
     admin_access_denied_handler,
-    access_denied_handler
+    access_denied_handler,
+    inactive_user_handler,
 )
 
 from app.exceptions.auth import (
@@ -20,6 +21,7 @@ from app.exceptions.auth import (
     RefreshTokenRevokedException,
     AdminAccessDeniedException,
     AccessDeniedException,
+    InactiveUserException,
 )
 
 from app.api.handlers.booking import (
@@ -149,6 +151,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         AccessDeniedException,
         access_denied_handler,
+    )
+
+    app.add_exception_handler(
+        InactiveUserException,
+        inactive_user_handler,
     )
 
     app.add_exception_handler(

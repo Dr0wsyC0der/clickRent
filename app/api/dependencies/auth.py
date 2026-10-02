@@ -4,7 +4,7 @@ from app.services.auth import AuthService
 from app.security.jwt import decode_token
 from app.api.dependencies.repositories import get_refresh_token_repository, get_user_repository
 from app.api.dependencies.db import get_session
-from app.exceptions.auth import InvalidCredentialsException, AdminAccessDeniedException, AccessDeniedException
+from app.exceptions.auth import InvalidCredentialsException, AdminAccessDeniedException, AccessDeniedException, InactiveUserException
 from app.db.enums import UserRole
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -39,6 +39,8 @@ async def get_current_user(
 
     if user is None:
         raise InvalidCredentialsException()
+    if not user.is_active:
+        raise InactiveUserException()
 
     return user
 
@@ -66,6 +68,9 @@ async def get_optional_current_user(
         user_id = int(payload["sub"])
 
         user = await user_repository.get_by_id(user_id)
+
+        if user is None or not user.is_active:
+            return None
 
         return user
 

@@ -222,3 +222,42 @@ async def test_get_favorites_pagination(
     assert data["size"] == 2
     assert data["pages"] == 2
     assert len(data["properties"]) == 2
+
+@pytest.mark.asyncio
+async def test_get_favorites_page_out_of_range(client, auth_headers, property):
+    await client.post(f"/api/v1/favorites/{property.id}", headers=auth_headers)
+
+    response = await client.get("/api/v1/favorites/", headers=auth_headers, params={"page": 5, "size": 10})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["properties"] == []
+    assert data["total"] == 1
+    assert data["pages"] == 1
+
+
+@pytest.mark.asyncio
+async def test_favorites_are_isolated_between_users(client, auth_headers, owner_auth_headers, property):
+    await client.post(f"/api/v1/favorites/{property.id}", headers=auth_headers)
+
+    response = await client.get("/api/v1/favorites/", headers=owner_auth_headers)
+
+    assert response.json()["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_remove_favorite_of_nonexistent_property(client, auth_headers):
+    response = await client.delete("/api/v1/favorites/999999", headers=auth_headers)
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_favorite_disappears_after_property_deleted(client, auth_headers, owner_auth_headers, owner_property):
+    await client.post(f"/api/v1/favorites/{owner_property.id}", headers=auth_headers)
+
+    delete = await client.delete(f"/api/v1/properties/{owner_property.id}", headers=owner_auth_headers)
+    assert delete.status_code == 204
+
+    response = await client.get("/api/v1/favorites/", headers=auth_headers)
+    assert response.json()["total"] == 0

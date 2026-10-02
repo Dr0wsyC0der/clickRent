@@ -7,7 +7,7 @@ from app.repositories.refresh_token import RefreshTokenRepository
 from app.models.users import User as UserModel
 from app.models.refresh_tokens import RefreshToken as RefreshTokenModel
 from app.security.hashing import hash_password, verify_password, hash_refresh_token
-from app.exceptions.auth import EmailAlreadyExistsException, UsernameAlreadyExistsException, InvalidCredentialsException, InvalidRefreshTokenException, RefreshTokenRevokedException, RefreshTokenExpiredException
+from app.exceptions.auth import InactiveUserException, EmailAlreadyExistsException, UsernameAlreadyExistsException, InvalidCredentialsException, InvalidRefreshTokenException, RefreshTokenRevokedException, RefreshTokenExpiredException
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -40,6 +40,7 @@ class AuthService:
             email = data.email,
             username = data.username,
             password_hash = password_hash,
+            role = data.role,
         )
 
         new_user = await self.user_repository.create(new_user)
@@ -58,6 +59,8 @@ class AuthService:
         )
         if not password_is_valid:
             raise InvalidCredentialsException()
+        if not user.is_active:
+            raise InactiveUserException()
         
         return await self._create_token_pair(user)
 
@@ -71,6 +74,8 @@ class AuthService:
         user = await self.user_repository.get_by_id(int(user_id))
         if not user:
             raise InvalidRefreshTokenException()
+        if not user.is_active:
+            raise InactiveUserException()
 
         await self.refresh_token_repository.revoke(refresh)
 

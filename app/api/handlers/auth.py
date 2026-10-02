@@ -9,7 +9,8 @@ from app.exceptions.auth import (
     RefreshTokenExpiredException,
     RefreshTokenRevokedException,
     AdminAccessDeniedException,
-    AccessDeniedException
+    AccessDeniedException,
+    InactiveUserException,
 )
 
 
@@ -61,6 +62,12 @@ async def admin_access_denied_handler(request: Request, exc: AdminAccessDeniedEx
     )
 
 async def access_denied_handler(request: Request, exc: AccessDeniedException):
+    return JSONResponse(
+        status_code=403,
+        content={"detail": str(exc)},
+    )
+
+async def inactive_user_handler(request: Request, exc: InactiveUserException):
     return JSONResponse(
         status_code=403,
         content={"detail": str(exc)},
