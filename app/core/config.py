@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     # Присутствие WebSocket-подключений в Redis: TTL записи и период ее продления
     ws_presence_ttl_seconds: int = 60
     ws_heartbeat_interval_seconds: int = 20
+    # Кэш объектов и каталога в Redis (TTL — страховка, основная инвалидация по версиям)
+    cache_enabled: bool = True
+    cache_property_ttl_seconds: int = 300
+    cache_catalog_ttl_seconds: int = 60
     # Rate limiting чувствительных эндпоинтов: "<количество>/<second|minute|hour|day>" с одного IP
     rate_limit_enabled: bool = True
     rate_limit_login: str = "10/minute"

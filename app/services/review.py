@@ -3,6 +3,7 @@ from app.repositories.review import ReviewRepository
 from app.repositories.booking import BookingRepository
 from app.repositories.property import PropertyRepository
 from app.services.notification import NotificationService
+from app.cache.property import PropertyCache
 from app.schemas.review import CreateReview, UpdateReview
 from app.models.reviews import Review as ReviewModel
 from app.exceptions.review import ReviewAlreadyExistsException, ReviewNotFoundException, ReviewAccessDeniedException
@@ -15,11 +16,13 @@ class ReviewService:
         booking_repository: BookingRepository,
         property_repository: PropertyRepository,
         notification_service: NotificationService,
+        property_cache: PropertyCache,
     ):
         self.review_repository = review_repository
         self.booking_repository = booking_repository
         self.property_repository = property_repository
         self.notification_service = notification_service
+        self.property_cache = property_cache
 
     async def create_review(self, user_id: int, review_data: CreateReview) -> ReviewModel:
         booking = await self.booking_repository.get_booking_by_id(review_data.booking_id)
@@ -52,6 +55,9 @@ class ReviewService:
         except Exception:
             await self.review_repository.rollback()
             raise
+
+        # Рейтинг объекта изменился: сбрасываем его карточку и страницы каталога
+        await self.property_cache.invalidate_property(new_review.property_id)
 
         review_property = await self.property_repository.get_by_id(new_review.property_id)
         if review_property is not None:
@@ -91,6 +97,8 @@ class ReviewService:
         except Exception:
             await self.review_repository.rollback()
             raise
+
+        await self.property_cache.invalidate_property(review.property_id)
         return review
 
     async def delete_review(self, user_id: int, review_id: int) -> None:
@@ -107,3 +115,5 @@ class ReviewService:
         except Exception:
             await self.review_repository.rollback()
             raise
+
+        await self.property_cache.invalidate_property(property_id)

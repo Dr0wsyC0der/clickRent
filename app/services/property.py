@@ -1,17 +1,25 @@
 from app.repositories.property import PropertyRepository
 from app.repositories.booking import BookingRepository
 from app.repositories.amenity import AmenityRepository
-from app.schemas.property import PropertyCreate, PropertyUpdate, PropertySearchParams, PropertyListParams
+from app.cache.property import PropertyCache
+from app.schemas.property import PropertyCreate, PropertyUpdate, PropertySearchParams, PropertyListParams, PropertyResponse, PropertySortBy
 from app.models.properties import Property as PropertyModel
 from app.models.amenities import Amenity as AmenityModel
 from app.exceptions.property import PropertyAlreadyExistsException, PropertyNotFoundException, PropertyAccessDeniedException
 from app.exceptions.amenity import AmenityNotFoundException, AmenityAlreadyAddedException, AmenityNotAddedException
 
 class PropertyService:
-    def __init__(self, property_repository: PropertyRepository, booking_repository: BookingRepository, amenity_repository: AmenityRepository):
+    def __init__(
+        self,
+        property_repository: PropertyRepository,
+        booking_repository: BookingRepository,
+        amenity_repository: AmenityRepository,
+        property_cache: PropertyCache,
+    ):
         self.property_repository = property_repository
         self.booking_repository = booking_repository
         self.amenity_repository = amenity_repository
+        self.property_cache = property_cache
 
     async def create_property(self, user_id: int, property_data: PropertyCreate) -> PropertyModel:
         existing_property = await self.property_repository.get_by_owner_and_address(
@@ -44,14 +52,19 @@ class PropertyService:
              await self.property_repository.rollback()
              raise
         
+        await self.property_cache.invalidate_catalog()
         return new_property
 
 
-    async def get_all_properties(self, filters: PropertyListParams) -> tuple[list[PropertyModel], int]:
-        return await self.property_repository.get_all(filters)
+    async def get_all_properties(self, filters: PropertyListParams) -> tuple[list[PropertyModel | PropertyResponse], int]:
+        return await self.property_cache.get_catalog_page(
+            "list", filters, lambda: self.property_repository.get_all(filters)
+        )
 
-    async def get_property_by_id(self, property_id: int) -> PropertyModel | None:
-        property = await self.property_repository.get_by_id(property_id)
+    async def get_property_by_id(self, property_id: int) -> PropertyModel | PropertyResponse:
+        property = await self.property_cache.get_property(
+            property_id, lambda: self.property_repository.get_by_id(property_id)
+        )
         if not property:
             raise PropertyNotFoundException("Недвижимость с указанным ID не найдена.")
         return property
@@ -67,7 +80,9 @@ class PropertyService:
             raise PropertyAccessDeniedException("У вас нет прав для изменения этой недвижимости.")
         for key, value in property_data.model_dump(exclude_unset=True).items():
             setattr(property, key, value)
-        return await self.property_repository.update(property)
+        updated_property = await self.property_repository.update(property)
+        await self.property_cache.invalidate_property(property_id)
+        return updated_property
 
     async def delete_property(self, owner_id: int, property_id: int) -> None:
         property = await self.property_repository.get_by_id(property_id)
@@ -76,10 +91,17 @@ class PropertyService:
         if property.owner_id != owner_id:
             raise PropertyAccessDeniedException("У вас нет прав для управления этой недвижимостью.")
         await self.property_repository.delete(property)
+        await self.property_cache.invalidate_property(property_id)
 
-    async def search_properties(self, filters: PropertySearchParams) -> tuple[list[PropertyModel], int]:
-        properties, total = await self.property_repository.search_properties(filters)
-        return properties, total
+    async def search_properties(self, filters: PropertySearchParams) -> tuple[list[PropertyModel | PropertyResponse], int]:
+        # Доступность по датам зависит от бронирований, а популярность — от каждого просмотра:
+        # такие результаты меняются без изменения объектов, поэтому не кэшируются
+        if filters.check_in is not None or filters.sort_by == PropertySortBy.POPULARITY:
+            return await self.property_repository.search_properties(filters)
+
+        return await self.property_cache.get_catalog_page(
+            "search", filters, lambda: self.property_repository.search_properties(filters)
+        )
 
     async def add_amenity_to_property(self, owner_id: int, property_id: int, amenity_id: int) -> None:
         property_obj = await self.property_repository.get_by_id(property_id)
@@ -104,6 +126,9 @@ class PropertyService:
         except Exception:
             await self.property_repository.rollback()
             raise
+
+        # Удобства влияют на результаты поиска с фильтром amenity_ids
+        await self.property_cache.invalidate_catalog()
 
     async def get_property_amenities(self, property_id: int) -> list[AmenityModel]:
         property_obj = await self.property_repository.get_by_id(property_id)
@@ -136,3 +161,5 @@ class PropertyService:
         except Exception:
             await self.property_repository.rollback()
             raise
+
+        await self.property_cache.invalidate_catalog()

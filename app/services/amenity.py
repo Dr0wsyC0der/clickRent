@@ -2,10 +2,12 @@ from app.repositories.amenity import AmenityRepository
 from app.models.amenities import Amenity as AmenityModel
 from app.exceptions.amenity import AmenityNotFoundException, AmenityAlreadyAddedException
 from app.schemas.amenity import AmenityCreate, AmenityUpdate
+from app.cache.property import PropertyCache
 
 class AmenityService:
-    def __init__(self, amenity_repository: AmenityRepository):
+    def __init__(self, amenity_repository: AmenityRepository, property_cache: PropertyCache):
         self.amenity_repository = amenity_repository
+        self.property_cache = property_cache
 
     async def create_amenity(self, amenity_data: AmenityCreate) -> AmenityModel:
         existing_amenity = await self.amenity_repository.get_by_name(name=amenity_data.name)
@@ -59,6 +61,9 @@ class AmenityService:
         except Exception:
             await self.amenity_repository.rollback()
             raise
+
+        # Удобство удалено у всех объектов: меняются результаты поиска с фильтром amenity_ids
+        await self.property_cache.invalidate_catalog()
 
     async def get_amenity_by_id(self, amenity_id: int) -> AmenityModel:
         amenity = await self.amenity_repository.get_by_id(amenity_id)
