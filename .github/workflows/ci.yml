@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Проверка кода (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Установка зависимостей
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Компиляция модулей
+        run: python -m compileall -q app alembic
+
+  test:
+    name: Тесты и миграции
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: clickrent_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ENVIRONMENT: testing
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/clickrent
+      TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/clickrent_test
+      SECRET_KEY: ci-secret-key-not-for-production-use-only
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      REFRESH_TOKEN_EXPIRE_DAYS: "30"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Установка зависимостей
+        run: pip install -r requirements-dev.txt
+
+      - name: Миграции на чистой БД
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE clickrent"
+          alembic upgrade head
+          alembic check
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Тесты
+        run: pytest app/tests -q
+
+  docker:
+    name: Сборка Docker-образа
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Сборка образа
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: clickrent-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Проверка запуска контейнера
+        run: |
+          docker network create clickrent-ci
+          docker run -d --name db --network clickrent-ci \
+            -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=clickrent postgres:17
+          for i in $(seq 1 30); do docker exec db pg_isready -U postgres && break; sleep 2; done
+          docker run -d --name app --network clickrent-ci -p 8000:8000 \
+            -e DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/clickrent \
+            -e SECRET_KEY=ci-secret-key-not-for-production-use-only \
+            -e ALGORITHM=HS256 -e ACCESS_TOKEN_EXPIRE_MINUTES=30 -e REFRESH_TOKEN_EXPIRE_DAYS=30 \
+            -e ENVIRONMENT=production \
+            clickrent-api:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8000/health/ready && exit 0
+            sleep 2
+          done
+          docker logs app
+          exit 1

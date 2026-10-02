@@ -230,3 +230,8 @@ def downgrade() -> None:
     op.drop_table('chats')
     op.drop_table('amenities')
     # ### end Alembic commands ###
+
+    # Enum-типы PostgreSQL не удаляются вместе с таблицами, без этого повторный upgrade падает
+    op.execute("DROP TYPE IF EXISTS bookingstatus")
+    op.execute("DROP TYPE IF EXISTS notificationtype")
+    op.execute("DROP TYPE IF EXISTS userrole")

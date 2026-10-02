@@ -1,0 +1,13 @@
+[tool.ruff]
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+# Синтаксические ошибки и pyflakes: неопределенные имена, переопределения, неиспользуемые переменные
+select = ["E9", "F"]
+# Неиспользуемые импорты не блокируют CI
+ignore = ["F401"]
+
+[tool.ruff.lint.per-file-ignores]
+# relationship-аннотации SQLAlchemy ссылаются на модели строками (Mapped["User"])
+"app/models/*" = ["F821"]

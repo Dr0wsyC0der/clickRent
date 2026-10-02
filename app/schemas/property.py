@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from decimal import Decimal
 from enum import Enum
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import model_validator
 
 
 class PropertyCreate(BaseModel):

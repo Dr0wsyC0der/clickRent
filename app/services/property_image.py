@@ -59,7 +59,7 @@ class PropertyImageService:
             )
             return new_image
 
-        except Exception as e:
+        except Exception:
             await self.media_saver.delete_file(image_url)
             raise PropertyImageCreateException("Ошибка при добавлении изображения") 
 
