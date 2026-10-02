@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List
 
 
@@ -8,11 +8,18 @@ class CreateReview(BaseModel):
     property_id: int = Field(..., description="ID объекта недвижимости")
     booking_id: int = Field(..., description="ID бронирования")
     rating: float = Field(..., description="Рейтинг объекта недвижимости", ge=1, le=5)
-    comment: Optional[str] = Field(None, description="Комментарий к отзыву")
+    comment: Optional[str] = Field(None, description="Комментарий к отзыву", max_length=500)
 
 class UpdateReview(BaseModel):
     rating: Optional[float] = Field(None, description="Рейтинг объекта недвижимости", ge=1, le=5)
-    comment: Optional[str] = Field(None, description="Комментарий к отзыву")
+    comment: Optional[str] = Field(None, description="Комментарий к отзыву", max_length=500)
+
+    @field_validator("rating")
+    @classmethod
+    def rating_not_null(cls, value: float | None) -> float:
+        if value is None:
+            raise ValueError("Рейтинг не может быть пустым")
+        return value
 
 class ReviewResponse(BaseModel):
     id: int = Field(..., description="Уникальный идентификатор отзыва")
