@@ -12,6 +12,7 @@ from app.api.v1.routes.reviews.review import router as review_router
 from app.api.v1.routes.favorities.favorite import router as favorite_router
 from app.api.v1.routes.property_images.property_images import router as property_images_router
 from app.api.v1.routes.notifications.notifications import router as notification_router
+from app.api.v1.routes.chats.chats import router as chat_router
 from app.api.handlers.register import register_exception_handlers
 from app.core.config import settings
 from app.db.database import async_session_maker
@@ -62,6 +63,7 @@ app.include_router(review_router, prefix="/api/v1")
 app.include_router(property_images_router, prefix="/api/v1")
 app.include_router(favorite_router, prefix="/api/v1")
 app.include_router(notification_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
 
 
 @app.get("/")

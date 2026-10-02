@@ -106,6 +106,20 @@ from app.exceptions.notification import (
     NotificationNotFoundException
 )
 
+from app.api.handlers.chat import (
+    chat_not_found_handler,
+    chat_access_denied_handler,
+    chat_participant_not_found_handler,
+    invalid_chat_participant_handler,
+)
+
+from app.exceptions.chat import (
+    ChatNotFoundException,
+    ChatAccessDeniedException,
+    ChatParticipantNotFoundException,
+    InvalidChatParticipantException,
+)
+
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         EmailAlreadyExistsException,
@@ -251,4 +265,24 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         NotificationNotFoundException,
         notification_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        ChatNotFoundException,
+        chat_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        ChatAccessDeniedException,
+        chat_access_denied_handler,
+    )
+
+    app.add_exception_handler(
+        ChatParticipantNotFoundException,
+        chat_participant_not_found_handler,
+    )
+
+    app.add_exception_handler(
+        InvalidChatParticipantException,
+        invalid_chat_participant_handler,
     )
