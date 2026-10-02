@@ -122,6 +122,9 @@ from app.exceptions.chat import (
     InvalidChatParticipantException,
 )
 
+from app.api.handlers.rate_limit import rate_limit_exceeded_handler
+from app.exceptions.rate_limit import RateLimitExceededException
+
 from sqlalchemy.exc import IntegrityError
 
 from app.api.handlers.common import (
@@ -309,4 +312,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         InvalidChatParticipantException,
         invalid_chat_participant_handler,
+    )
+
+    app.add_exception_handler(
+        RateLimitExceededException,
+        rate_limit_exceeded_handler,
     )
