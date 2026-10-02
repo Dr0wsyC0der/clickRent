@@ -43,7 +43,7 @@ class PropertySignalService:
 
         return PropertySignalsResponse(
             property_id=property_id,
-            viewing_now=self.get_viewers_count(property_id),
+            viewing_now=await self.get_viewers_count(property_id),
             views_today=views_today,
             views_last_week=views_last_week,
             favorites_count=favorites_count,
@@ -56,14 +56,14 @@ class PropertySignalService:
         # Завершаем читающую транзакцию, чтобы WebSocket-подключение не держало ее открытой
         await self.property_repository.commit()
 
-    def get_viewers_count(self, property_id: int) -> int:
-        return self.viewers_manager.count_users(property_id)
+    async def get_viewers_count(self, property_id: int) -> int:
+        return await self.viewers_manager.count_users(property_id)
 
     async def broadcast_viewers_count(self, property_id: int) -> None:
         await self.viewers_manager.broadcast(property_id, {
             "type": "viewers",
             "property_id": property_id,
-            "count": self.get_viewers_count(property_id),
+            "count": await self.get_viewers_count(property_id),
         })
 
     async def _ensure_property_exists(self, property_id: int) -> None:

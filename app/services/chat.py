@@ -84,7 +84,7 @@ class ChatService:
         # Уведомление получают только те участники, у кого сейчас не открыт этот чат
         preview = content if len(content) <= MESSAGE_PREVIEW_LENGTH else content[:MESSAGE_PREVIEW_LENGTH] + "…"
         for participant_id in participant_ids:
-            if participant_id == sender.id or self.connection_manager.is_user_connected(chat_id, participant_id):
+            if participant_id == sender.id or await self.connection_manager.is_user_connected(chat_id, participant_id):
                 continue
             await self.notification_service.create_notification(
                 user_id=participant_id,

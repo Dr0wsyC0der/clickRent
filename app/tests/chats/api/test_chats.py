@@ -218,7 +218,7 @@ async def test_ws_disconnect_removes_connection(client, auth_headers, owner_auth
 
     async with open_ws(ws_url(chat_id, owner_auth_headers)) as ws:
         await connected(ws)
-        assert chat_manager.is_user_connected(chat_id, owner.id)
+        assert await chat_manager.is_user_connected(chat_id, owner.id)
 
     await client.post(
         f"/api/v1/chats/{chat_id}/messages",
@@ -226,7 +226,7 @@ async def test_ws_disconnect_removes_connection(client, auth_headers, owner_auth
         json={"content": "Вы здесь?"},
     )
 
-    assert not chat_manager.is_user_connected(chat_id, owner.id)
+    assert not await chat_manager.is_user_connected(chat_id, owner.id)
     notifications = await get_notifications(client, owner_auth_headers)
     assert notifications[0]["type"] == "new_message"
 

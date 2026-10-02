@@ -27,6 +27,7 @@ from app.core.redis import create_redis, set_redis
 from app.db.database import async_session_maker
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.tasks.booking import run_booking_maintenance
+from app.websocket.manager import chat_manager, property_viewers_manager
 
 MEDIA_DIR = Path("media")
 
@@ -40,6 +41,8 @@ async def lifespan(app: FastAPI):
 
     redis = create_redis(settings.redis_url)
     set_redis(redis)
+    for manager in (chat_manager, property_viewers_manager):
+        await manager.start(redis)
 
     maintenance_task = None
     if settings.environment != "testing":
@@ -54,6 +57,8 @@ async def lifespan(app: FastAPI):
         with suppress(asyncio.CancelledError):
             await maintenance_task
 
+    for manager in (chat_manager, property_viewers_manager):
+        await manager.stop()
     set_redis(None)
     await redis.aclose()
 

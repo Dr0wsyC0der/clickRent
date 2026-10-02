@@ -2,9 +2,9 @@ import os
 
 bind = f"0.0.0.0:{os.getenv('PORT', '8000')}"
 
-# WebSocket-подключения (чат, счетчик зрителей) хранятся в памяти процесса,
-# поэтому по умолчанию работает один воркер. Для нескольких воркеров нужен общий брокер (Redis Pub/Sub).
-workers = int(os.getenv("WEB_CONCURRENCY", "1"))
+# Состояние WebSocket (рассылка событий, присутствие) синхронизируется через Redis,
+# поэтому воркеров может быть несколько
+workers = int(os.getenv("WEB_CONCURRENCY", "2"))
 worker_class = "uvicorn_worker.UvicornWorker"
 
 timeout = 60

@@ -201,7 +201,7 @@ async def property_viewers_websocket(
         await websocket.close(code=WS_NOT_FOUND, reason=str(exc))
         return
 
-    property_viewers_manager.connect(property_id, websocket, current_user.id if current_user else None)
+    await property_viewers_manager.connect(property_id, websocket, current_user.id if current_user else None)
     try:
         await signal_service.broadcast_viewers_count(property_id)
         # Клиент только слушает обновления; входящие сообщения (например, ping) игнорируются
@@ -210,5 +210,5 @@ async def property_viewers_websocket(
     except WebSocketDisconnect:
         pass
     finally:
-        property_viewers_manager.disconnect(property_id, websocket)
+        await property_viewers_manager.disconnect(property_id, websocket)
         await signal_service.broadcast_viewers_count(property_id)

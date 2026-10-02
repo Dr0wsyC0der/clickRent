@@ -119,7 +119,7 @@ async def chat_websocket(
         await websocket.close(code=WS_FORBIDDEN, reason=str(exc))
         return
 
-    chat_manager.connect(chat_id, websocket, current_user.id)
+    await chat_manager.connect(chat_id, websocket, current_user.id)
     try:
         await websocket.send_json({"type": "connected", "chat_id": chat_id})
         while True:
@@ -141,4 +141,4 @@ async def chat_websocket(
     except WebSocketDisconnect:
         pass
     finally:
-        chat_manager.disconnect(chat_id, websocket)
+        await chat_manager.disconnect(chat_id, websocket)

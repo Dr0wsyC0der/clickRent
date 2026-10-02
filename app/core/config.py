@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     booking_pending_ttl_minutes: int = 30
     booking_tasks_interval_seconds: int = 60
+    # Присутствие WebSocket-подключений в Redis: TTL записи и период ее продления
+    ws_presence_ttl_seconds: int = 60
+    ws_heartbeat_interval_seconds: int = 20
     log_level: str = "INFO"
     sql_echo: bool = False
 

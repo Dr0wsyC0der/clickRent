@@ -19,14 +19,14 @@ from datetime import datetime, timedelta, timezone
 from app.models.bookings import Booking
 from app.db.enums import BookingStatus
 from app.core.redis import create_redis, set_redis
+from app.websocket.manager import chat_manager, property_viewers_manager
 
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://postgres:postgres@localhost:5432/clickrent_test",
 )
-# Отдельная логическая база Redis, которая очищается перед каждым тестом
-TEST_REDIS_URL = os.getenv("TEST_REDIS_URL", "redis://localhost:6379/15")
+from app.tests.ws import TEST_REDIS_URL
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -41,6 +41,19 @@ async def redis_client():
     set_redis(None)
     await client.flushdb()
     await client.aclose()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def websocket_managers(redis_client):
+    # Lifespan приложения в тестах не выполняется, поэтому менеджеры запускаются здесь
+    managers = (chat_manager, property_viewers_manager)
+    for manager in managers:
+        await manager.start(redis_client)
+
+    yield managers
+
+    for manager in managers:
+        await manager.stop()
 
 
 @pytest_asyncio.fixture
