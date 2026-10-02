@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from decimal import Decimal
+from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
@@ -73,18 +74,27 @@ class PropertyListParams(BaseModel):
     page: int = Field(1, ge=1, description="Номер страницы")
     size: int = Field(10, ge=1, le=100, description="Количество объектов недвижимости на странице")
 
+class PropertySortBy(str, Enum):
+    PRICE_ASC = "price_asc"
+    PRICE_DESC = "price_desc"
+    RATING = "rating"
+    POPULARITY = "popularity"
+    NEWEST = "newest"
+
 class PropertySearchParams(PropertyListParams):
     city: str | None = Field(None, description="Город объекта недвижимости", max_length=50)
     country: str | None = Field(None, description="Страна объекта недвижимости", max_length=50)
     min_price: float | None = Field(None, gt=0, description="Минимальная цена объекта недвижимости за ночь")
     max_price: float | None = Field(None, gt=0, description="Максимальная цена объекта недвижимости за ночь")
     guest_capacity: int | None = Field(None, gt=0, description="Вместимость объекта недвижимости")
-    rooms: int | None = Field(None, gt=0, description="Количество комнат в объекте недвижимости")
+    rooms: int | None = Field(None, gt=0, description="Минимальное количество комнат в объекте недвижимости")
     beds: int | None = Field(None, gt=0, description="Количество кроватей в объекте недвижимости")
     bathrooms: int | None = Field(None, gt=0, description="Количество ванных комнат в объекте недвижимости")
     rating: float | None = Field(None, ge=0, le=5, description="Рейтинг объекта недвижимости")
     check_in: datetime| None = Field(None, description="Дата заезда в формате YYYY-MM-DD")
     check_out: datetime | None = Field(None, description="Дата выезда в формате YYYY-MM-DD")
+    amenity_ids: list[int] = Field(default_factory=list, description="ID удобств, которые должны быть у объекта (все сразу)")
+    sort_by: PropertySortBy = Field(PropertySortBy.NEWEST, description="Сортировка: price_asc, price_desc, rating, popularity, newest")
 
     @model_validator(mode="after")
     def validate_dates(self):

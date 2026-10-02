@@ -1,12 +1,15 @@
 from sqlalchemy import select, func, exists, and_, insert, delete
 from app.models.properties import Property as PropertyModel
 from app.repositories.base import BaseRepository
-from app.schemas.property import PropertySearchParams, PropertyListParams
+from app.schemas.property import PropertySearchParams, PropertyListParams, PropertySortBy
+from app.models.property_views import PropertyView as PropertyViewModel
 from app.models.bookings import Booking as BookingModel
 from app.models.amenities import Amenity as AmenityModel
 from app.models.association_tables import property_amenities as PropertyAmenitiesModel
 from app.repositories.booking import active_booking_condition
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+
+POPULARITY_WINDOW_DAYS = 30
 
 
 class PropertyRepository(BaseRepository):
@@ -71,10 +74,10 @@ class PropertyRepository(BaseRepository):
         conditions = []
 
         if filters.city is not None:
-            conditions.append(PropertyModel.city == filters.city)
+            conditions.append(func.lower(PropertyModel.city) == filters.city.strip().lower())
 
         if filters.country is not None:
-            conditions.append(PropertyModel.country == filters.country)
+            conditions.append(func.lower(PropertyModel.country) == filters.country.strip().lower())
 
         if filters.min_price is not None:
             conditions.append(
@@ -92,7 +95,7 @@ class PropertyRepository(BaseRepository):
             )
 
         if filters.rooms is not None:
-            conditions.append(PropertyModel.rooms == filters.rooms)
+            conditions.append(PropertyModel.rooms >= filters.rooms)
 
         if filters.beds is not None:
             conditions.append(PropertyModel.beds >= filters.beds)
@@ -115,13 +118,24 @@ class PropertyRepository(BaseRepository):
 
             conditions.append(~booking_exists)
 
+        if filters.amenity_ids:
+            amenity_ids = set(filters.amenity_ids)
+            # Объект должен иметь все запрошенные удобства
+            properties_with_amenities = (
+                select(PropertyAmenitiesModel.c.property_id)
+                .where(PropertyAmenitiesModel.c.amenity_id.in_(amenity_ids))
+                .group_by(PropertyAmenitiesModel.c.property_id)
+                .having(func.count(PropertyAmenitiesModel.c.amenity_id.distinct()) == len(amenity_ids))
+            )
+            conditions.append(PropertyModel.id.in_(properties_with_amenities))
+
         count_query = select(func.count()).select_from(PropertyModel).where(*conditions)
         total = await self.session.scalar(count_query)
         
         result = await self.session.scalars(
             select(PropertyModel)
             .where(*conditions)
-            .order_by(PropertyModel.created_at.desc())
+            .order_by(*self._search_ordering(filters.sort_by))
             .offset((filters.page - 1) * filters.size)
             .limit(filters.size)
         )
@@ -129,6 +143,32 @@ class PropertyRepository(BaseRepository):
         properties = result.all()
 
         return properties, total
+
+    @staticmethod
+    def _search_ordering(sort_by: PropertySortBy) -> list:
+        if sort_by == PropertySortBy.PRICE_ASC:
+            ordering = [PropertyModel.price_per_night.asc()]
+        elif sort_by == PropertySortBy.PRICE_DESC:
+            ordering = [PropertyModel.price_per_night.desc()]
+        elif sort_by == PropertySortBy.RATING:
+            ordering = [PropertyModel.rating.desc().nulls_last(), PropertyModel.review_count.desc()]
+        elif sort_by == PropertySortBy.POPULARITY:
+            # Популярность — уникальные просмотры за последние 30 дней
+            views_last_month = (
+                select(func.count())
+                .select_from(PropertyViewModel)
+                .where(
+                    PropertyViewModel.property_id == PropertyModel.id,
+                    PropertyViewModel.view_date >= date.today() - timedelta(days=POPULARITY_WINDOW_DAYS),
+                )
+                .scalar_subquery()
+            )
+            ordering = [views_last_month.desc()]
+        else:
+            ordering = []
+
+        # Стабильный порядок для пагинации
+        return [*ordering, PropertyModel.created_at.desc(), PropertyModel.id.desc()]
 
     async def get_property_amenities(self, property_id: int) -> list[AmenityModel]:
         result =  await self.session.scalars(

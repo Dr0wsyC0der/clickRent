@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status, Request, Response
+from typing import Annotated
+from fastapi import APIRouter, Depends, Query, status, Request, Response
 from uuid import UUID, uuid4
 from app.models.users import User
 from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertySearchParams, PropertySearchResponse, PropertyListParams
@@ -30,7 +31,7 @@ async def create_property(
 
 @router.get("/search", response_model=PropertySearchResponse, status_code=status.HTTP_200_OK)
 async def search_properties(
-    search_params: PropertySearchParams = Depends(),
+    search_params: Annotated[PropertySearchParams, Query()],
     property_service: PropertyService = Depends(get_property_service)
 ):
     properties, total = await property_service.search_properties(search_params)
